@@ -60,6 +60,7 @@ final class ExampleViewModel: ObservableObject {
 
         client.onEventRecord = { [weak self] record in
             Task { @MainActor in
+                EulerConsolePayloadPrinter.printLogBlock(for: record)
                 self?.records.insert(record, at: 0)
             }
         }
