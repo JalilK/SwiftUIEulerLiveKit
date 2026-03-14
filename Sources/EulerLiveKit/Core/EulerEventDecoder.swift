@@ -123,6 +123,27 @@ public enum EulerEventDecoder {
         case .linkLayer(let event):
             let hasStrongData = event.scene != nil || event.messageType != nil || !event.participants.isEmpty
             return hasStrongData ? .decoded : .decodedWithPartialData
+        case .socialRepost(let event):
+            let hasStrongData = event.uniqueId != nil || event.nickname != nil || event.displayText != nil
+            return hasStrongData ? .decoded : .decodedWithPartialData
+        case .linkMicBattle(let event):
+            let hasStrongData = event.battleId != nil || event.status != nil || event.leftUserId != nil || event.rightUserId != nil
+            return hasStrongData ? .decoded : .decodedWithPartialData
+        case .linkMicBattleTask(let event):
+            let hasStrongData = event.battleId != nil || event.messageType != nil || event.taskProgress != nil || event.taskResult != nil || event.rewardSettleAmount != nil
+            return hasStrongData ? .decoded : .decodedWithPartialData
+        case .unauthorizedMember(let event):
+            let hasStrongData = event.nickname != nil || event.enterText != nil
+            return hasStrongData ? .decoded : .decodedWithPartialData
+        case .moderationDelete(let event):
+            let hasStrongData = !event.deletedUserIds.isEmpty || !event.deletedMessageIds.isEmpty
+            return hasStrongData ? .decoded : .decodedWithPartialData
+        case .linkMicBattlePunishFinish(let event):
+            let hasStrongData = event.battleId != nil || event.operatorUserId != nil || event.reason != nil
+            return hasStrongData ? .decoded : .decodedWithPartialData
+        case .linkMessage(let event):
+            let hasStrongData = event.scene != nil || event.linkerId != nil || event.messageType != nil
+            return hasStrongData ? .decoded : .decodedWithPartialData
         case .workerInfo(let event):
             let hasStrongData = event.webSocketId != nil || event.schemaVersion != nil
             return hasStrongData ? .decoded : .decodedWithPartialData
@@ -155,6 +176,10 @@ public enum EulerEventDecoder {
             switch action {
             case "1": return "follow"
             case "3": return "share"
+            case "4":
+                if let pattern = findString(in: object, matchingAnyOf: ["defaultPattern"])?.lowercased(), pattern.contains("reposted") {
+                    return "social_repost"
+                }
             default: break
             }
         }
@@ -162,6 +187,7 @@ public enum EulerEventDecoder {
         if let pattern = findString(in: object, matchingAnyOf: ["defaultPattern"])?.lowercased() {
             if pattern.contains("followed the live") { return "follow" }
             if pattern.contains("shared the live") { return "share" }
+            if pattern.contains("reposted") { return "social_repost" }
         }
 
         return "webcastsocialmessage"
@@ -211,6 +237,20 @@ public enum EulerEventDecoder {
             return "in_room_banner"
         case "linklayermessage", "link_layer", "webcastlinklayermessage":
             return "link_layer"
+        case "social_repost":
+            return "social_repost"
+        case "linkmicbattle", "link_mic_battle", "webcastlinkmicbattle":
+            return "link_mic_battle"
+        case "linkmicbattletaskmessage", "link_mic_battle_task", "webcastlinkmicbattletaskmessage", "webcastlinkmicbattletaskmessage":
+            return "link_mic_battle_task"
+        case "unauthorizedmembermessage", "unauthorized_member", "webcastunauthorizedmembermessage":
+            return "unauthorized_member"
+        case "imdeletemessage", "moderation_delete", "webcastimdeletemessage":
+            return "moderation_delete"
+        case "linkmicbattlepunishfinish", "link_mic_battle_punish_finish", "webcastlinkmicbattlepunishfinish":
+            return "link_mic_battle_punish_finish"
+        case "linkmessage", "link_message", "webcastlinkmessage":
+            return "link_message"
         case "workerinfo", "worker_info":
             return "worker_info"
         case "tiktok.connect":
@@ -523,6 +563,106 @@ public enum EulerEventDecoder {
                 matchRank: int(fromAny: object["MatchRank"])
             )
         }
+    }
+
+
+    private static func extractLinkMicBattleEvent(from payload: [String: Any]) -> LinkMicBattleEvent {
+        let anchorInfo = findDictionary(in: payload, matchingAnyOf: ["anchorInfo"]) ?? [:]
+        let battleResult = findDictionary(in: payload, matchingAnyOf: ["battleResult"]) ?? [:]
+        let battleCombos = findDictionary(in: payload, matchingAnyOf: ["battleCombos"]) ?? [:]
+        let anchorIds = Array(anchorInfo.keys).sorted()
+
+        func anchorField(_ anchorId: String?, _ key: String) -> Any? {
+            guard let anchorId,
+                  let anchorObject = anchorInfo[anchorId] as? [String: Any],
+                  let user = anchorObject["user"] as? [String: Any] else { return nil }
+            return user[key]
+        }
+
+        func resultField(_ anchorId: String?, _ key: String) -> Any? {
+            guard let anchorId,
+                  let resultObject = battleResult[anchorId] as? [String: Any] else { return nil }
+            return resultObject[key]
+        }
+
+        func comboField(_ anchorId: String?, _ key: String) -> Any? {
+            guard let anchorId,
+                  let comboObject = battleCombos[anchorId] as? [String: Any] else { return nil }
+            return comboObject[key]
+        }
+
+        let leftId = anchorIds.first
+        let rightId = anchorIds.count > 1 ? anchorIds[1] : nil
+
+        return LinkMicBattleEvent(
+            roomId: findString(in: payload, matchingAnyOf: ["roomId"]),
+            battleId: findString(in: payload, matchingAnyOf: ["battleId"]),
+            channelId: findString(in: payload, matchingAnyOf: ["channelId"]),
+            status: findInt(in: payload, matchingAnyOf: ["status"]),
+            action: findInt(in: payload, matchingAnyOf: ["action"]),
+            inviteType: findInt(in: payload, matchingAnyOf: ["inviteType"]),
+            duration: findInt(in: payload, matchingAnyOf: ["duration"]),
+            battleType: findInt(in: payload, matchingAnyOf: ["battleType"]),
+            startTimeMs: findString(in: payload, matchingAnyOf: ["startTimeMs"]),
+            endTimeMs: findString(in: payload, matchingAnyOf: ["endTimeMs"]),
+            actionByUserId: findString(in: payload, matchingAnyOf: ["actionByUserId"]),
+            leftUserId: leftId,
+            leftDisplayId: string(fromAny: anchorField(leftId, "displayId")),
+            leftNickname: string(fromAny: anchorField(leftId, "nickName")),
+            rightUserId: rightId,
+            rightDisplayId: string(fromAny: anchorField(rightId, "displayId")),
+            rightNickname: string(fromAny: anchorField(rightId, "nickName")),
+            leftScore: int(fromAny: resultField(leftId, "score")),
+            rightScore: int(fromAny: resultField(rightId, "score")),
+            leftResult: int(fromAny: resultField(leftId, "result")),
+            rightResult: int(fromAny: resultField(rightId, "result")),
+            leftComboCount: int(fromAny: comboField(leftId, "comboCount")),
+            rightComboCount: int(fromAny: comboField(rightId, "comboCount"))
+        )
+    }
+
+    private static func extractLinkMicBattleTaskEvent(from payload: [String: Any]) -> LinkMicBattleTaskEvent {
+        return LinkMicBattleTaskEvent(
+            roomId: findString(in: payload, matchingAnyOf: ["roomId"]),
+            battleId: findString(in: payload, matchingAnyOf: ["battleId"]),
+            messageType: findInt(in: payload, matchingAnyOf: ["battleTaskMessageType"]),
+            taskProgress: findInt(in: payload, matchingAnyOf: ["taskProgress"]),
+            fromUserUid: findString(in: payload, matchingAnyOf: ["fromUserUid"]),
+            taskResult: findInt(in: payload, matchingAnyOf: ["taskResult"]),
+            rewardStartTimestamp: findString(in: payload, matchingAnyOf: ["rewardStartTimestamp"]),
+            rewardStartTime: findInt(in: payload, matchingAnyOf: ["rewardStartTime"]),
+            rewardMultiple: findInt(in: payload, matchingAnyOf: ["rewardMultiple"]),
+            rewardSettleAmount: findInt(in: payload, matchingAnyOf: ["sum"]),
+            rewardStatus: findInt(in: payload, matchingAnyOf: ["status"]),
+            progressTarget: findInt(in: payload, matchingAnyOf: ["progressTarget"])
+        )
+    }
+
+    private static func extractStringArray(in value: Any, matchingAnyOf keys: [String]) -> [String] {
+        if let object = value as? [String: Any] {
+            for key in keys {
+                if let array = object[key] as? [Any] {
+                    return array.compactMap { string(fromAny: $0) }
+                }
+            }
+            for child in object.values {
+                let nested = extractStringArray(in: child, matchingAnyOf: keys)
+                if !nested.isEmpty {
+                    return nested
+                }
+            }
+        }
+
+        if let array = value as? [Any] {
+            for item in array {
+                let nested = extractStringArray(in: item, matchingAnyOf: keys)
+                if !nested.isEmpty {
+                    return nested
+                }
+            }
+        }
+
+        return []
     }
 
     private static func extractLinkMicArmySides(from payload: [String: Any]) -> [LinkMicArmySide] {

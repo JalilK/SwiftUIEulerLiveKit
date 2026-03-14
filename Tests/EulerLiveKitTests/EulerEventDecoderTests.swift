@@ -152,4 +152,157 @@ struct EulerEventDecoderTests {
         #expect(event.participants.first?.status == 1)
         #expect(event.participants.first?.type == 102)
     }
+
+
+    @Test
+    func decodesObservedSocialRepostEnvelope() {
+        let payload = #"{\"messages\":[{\"type\":\"WebcastSocialMessage\",\"data\":{\"action\":\"4\",\"shareType\":\"0\",\"shareCount\":0,\"common\":{\"method\":\"WebcastSocialMessage\",\"roomId\":\"7617210650510592789\",\"displayText\":{\"defaultPattern\":\"{0:user} reposted\"}},\"user\":{\"userId\":\"7364988828970812462\",\"uniqueId\":\"confidente11\",\"nickname\":\"confidente🖤\"}}}],\"timestamp\":1773524789464}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "social_repost")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .socialRepost(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected social repost event")
+            return
+        }
+
+        #expect(event.roomId == "7617210650510592789")
+        #expect(event.userId == "7364988828970812462")
+        #expect(event.uniqueId == "confidente11")
+        #expect(event.nickname == "confidente🖤")
+        #expect(event.action == 4)
+        #expect(event.shareType == 0)
+        #expect(event.shareCount == 0)
+        #expect(event.displayText == "{0:user} reposted")
+    }
+
+    @Test
+    func decodesObservedLinkMicBattleEnvelope() {
+        let payload = #"{\"messages\":[{\"type\":\"WebcastLinkMicBattle\",\"data\":{\"battleSetting\":{\"startTimeMs\":\"1773524944259\",\"status\":1,\"channelId\":\"7617229194094742288\",\"inviteType\":1,\"endTimeMs\":\"0\",\"battleId\":\"7617231616074844945\",\"duration\":301,\"battleType\":1},\"battleResult\":{},\"battleId\":\"7617231616074844945\",\"anchorInfo\":{\"7233690436392403974\":{\"user\":{\"nickName\":\"👑DON.SG👑\",\"userId\":\"7233690436392403974\",\"displayId\":\"don.prof.sg\"}},\"7005525148082390022\":{\"user\":{\"nickName\":\"PrettyBoyAli24\",\"userId\":\"7005525148082390022\",\"displayId\":\"prettyboyali24\"}}},\"action\":4,\"actionByUserId\":\"7233690436392403974\",\"battleCombos\":{\"7233690436392403974\":{\"comboCount\":\"0\"},\"7005525148082390022\":{\"comboCount\":\"8\"}},\"common\":{\"method\":\"WebcastLinkMicBattle\",\"roomId\":\"7617210650510592789\"}}}],\"timestamp\":1773524944867}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "link_mic_battle")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .linkMicBattle(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected link mic battle event")
+            return
+        }
+
+        #expect(event.roomId == "7617210650510592789")
+        #expect(event.battleId == "7617231616074844945")
+        #expect(event.channelId == "7617229194094742288")
+        #expect(event.status == 1)
+        #expect(event.action == 4)
+        #expect(event.inviteType == 1)
+        #expect(event.duration == 301)
+        #expect(event.battleType == 1)
+        #expect(event.actionByUserId == "7233690436392403974")
+        #expect(event.leftUserId == "7005525148082390022")
+        #expect(event.leftDisplayId == "prettyboyali24")
+        #expect(event.rightUserId == "7233690436392403974")
+        #expect(event.rightDisplayId == "don.prof.sg")
+    }
+
+    @Test
+    func decodesObservedLinkMicBattleTaskLifecycleEnvelope() {
+        let payload = #"{\"messages\":[{\"type\":\"WebcastLinkmicBattleTaskMessage\",\"data\":{\"common\":{\"method\":\"WebcastLinkmicBattleTaskMessage\",\"roomId\":\"7617210650510592789\"},\"battleTaskMessageType\":3,\"battleId\":\"7617235158249343765\",\"rewardSettle\":{\"rewardSettlePrompt\":{\"promptElements\":[{\"promptFieldValue\":\"64365\",\"promptFieldKey\":\"sum\"}]},\"status\":0}}}],\"timestamp\":1773525941918}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "link_mic_battle_task")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .linkMicBattleTask(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected link mic battle task event")
+            return
+        }
+
+        #expect(event.roomId == "7617210650510592789")
+        #expect(event.battleId == "7617235158249343765")
+        #expect(event.messageType == 3)
+        #expect(event.rewardSettleAmount == 64365)
+        #expect(event.rewardStatus == 0)
+    }
+
+    @Test
+    func decodesObservedUnauthorizedMemberEnvelope() {
+        let payload = #"{\"messages\":[{\"type\":\"WebcastUnauthorizedMemberMessage\",\"data\":{\"common\":{\"method\":\"WebcastUnauthorizedMemberMessage\",\"roomId\":\"7617210650510592789\"},\"nickName\":\"296230\",\"enterText\":{\"defaultPattern\":\"{0:user} joined\"},\"action\":1}}],\"timestamp\":1773524814848}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "unauthorized_member")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .unauthorizedMember(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected unauthorized member event")
+            return
+        }
+
+        #expect(event.roomId == "7617210650510592789")
+        #expect(event.nickname == "296230")
+        #expect(event.action == 1)
+        #expect(event.enterText == "{0:user} joined")
+    }
+
+    @Test
+    func decodesObservedModerationDeleteEnvelope() {
+        let payload = #"{\"messages\":[{\"type\":\"WebcastImDeleteMessage\",\"data\":{\"deleteUserIdsList\":[\"6716621494014804998\"],\"deleteMsgIdsList\":[],\"common\":{\"method\":\"WebcastImDeleteMessage\",\"roomId\":\"7617210650510592789\"}}}],\"timestamp\":1773524829837}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "moderation_delete")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .moderationDelete(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected moderation delete event")
+            return
+        }
+
+        #expect(event.roomId == "7617210650510592789")
+        #expect(event.deletedUserIds == ["6716621494014804998"])
+        #expect(event.deletedMessageIds.isEmpty)
+    }
+
+    @Test
+    func decodesObservedLinkMicBattlePunishFinishEnvelope() {
+        let payload = #"{\"messages\":[{\"type\":\"WebcastLinkMicBattlePunishFinish\",\"data\":{\"common\":{\"method\":\"WebcastLinkMicBattlePunishFinish\",\"roomId\":\"7617210650510592789\"},\"opUid\":\"7005525148082390022\",\"battleId\":\"7617231616074844945\",\"reason\":1,\"battleSettings\":{\"status\":4,\"endTimeMs\":\"1773525248502\"},\"channelId\":\"7617229194094742288\"}}],\"timestamp\":1773525377639}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "link_mic_battle_punish_finish")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .linkMicBattlePunishFinish(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected battle punish finish event")
+            return
+        }
+
+        #expect(event.roomId == "7617210650510592789")
+        #expect(event.battleId == "7617231616074844945")
+        #expect(event.channelId == "7617229194094742288")
+        #expect(event.operatorUserId == "7005525148082390022")
+        #expect(event.reason == 1)
+        #expect(event.status == 4)
+        #expect(event.endTimeMs == "1773525248502")
+    }
+
+    @Test
+    func decodesObservedLinkMessageEnvelope() {
+        let payload = #"{\"messages\":[{\"type\":\"WebcastLinkMessage\",\"data\":{\"common\":{\"method\":\"WebcastLinkMessage\",\"roomId\":\"7617210650510592789\"},\"extra\":\"\",\"transferExtra\":\"\",\"Scene\":2,\"LinkerId\":\"7617234292992740114\",\"expireTimestamp\":\"0\",\"MessageType\":2}}],\"timestamp\":1773525593652}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "link_message")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .linkMessage(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected link message event")
+            return
+        }
+
+        #expect(event.roomId == "7617210650510592789")
+        #expect(event.scene == 2)
+        #expect(event.linkerId == "7617234292992740114")
+        #expect(event.messageType == 2)
+        #expect(event.expireTimestamp == "0")
+        #expect(event.extra == nil)
+        #expect(event.transferExtra == nil)
+    }
 }

@@ -690,6 +690,239 @@ public struct TransportConnectEvent: Sendable, Equatable, Hashable {
     }
 }
 
+
+public struct SocialRepostEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let userId: String?
+    public let uniqueId: String?
+    public let nickname: String?
+    public let action: Int?
+    public let shareType: Int?
+    public let shareCount: Int?
+    public let displayText: String?
+
+    public init(
+        roomId: String?,
+        userId: String?,
+        uniqueId: String?,
+        nickname: String?,
+        action: Int?,
+        shareType: Int?,
+        shareCount: Int?,
+        displayText: String?
+    ) {
+        self.roomId = roomId
+        self.userId = userId
+        self.uniqueId = uniqueId
+        self.nickname = nickname
+        self.action = action
+        self.shareType = shareType
+        self.shareCount = shareCount
+        self.displayText = displayText
+    }
+}
+
+public struct LinkMicBattleEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let battleId: String?
+    public let channelId: String?
+    public let status: Int?
+    public let action: Int?
+    public let inviteType: Int?
+    public let duration: Int?
+    public let battleType: Int?
+    public let startTimeMs: String?
+    public let endTimeMs: String?
+    public let actionByUserId: String?
+    public let leftUserId: String?
+    public let leftDisplayId: String?
+    public let leftNickname: String?
+    public let rightUserId: String?
+    public let rightDisplayId: String?
+    public let rightNickname: String?
+    public let leftScore: Int?
+    public let rightScore: Int?
+    public let leftResult: Int?
+    public let rightResult: Int?
+    public let leftComboCount: Int?
+    public let rightComboCount: Int?
+
+    public init(
+        roomId: String?,
+        battleId: String?,
+        channelId: String?,
+        status: Int?,
+        action: Int?,
+        inviteType: Int?,
+        duration: Int?,
+        battleType: Int?,
+        startTimeMs: String?,
+        endTimeMs: String?,
+        actionByUserId: String?,
+        leftUserId: String?,
+        leftDisplayId: String?,
+        leftNickname: String?,
+        rightUserId: String?,
+        rightDisplayId: String?,
+        rightNickname: String?,
+        leftScore: Int?,
+        rightScore: Int?,
+        leftResult: Int?,
+        rightResult: Int?,
+        leftComboCount: Int?,
+        rightComboCount: Int?
+    ) {
+        self.roomId = roomId
+        self.battleId = battleId
+        self.channelId = channelId
+        self.status = status
+        self.action = action
+        self.inviteType = inviteType
+        self.duration = duration
+        self.battleType = battleType
+        self.startTimeMs = startTimeMs
+        self.endTimeMs = endTimeMs
+        self.actionByUserId = actionByUserId
+        self.leftUserId = leftUserId
+        self.leftDisplayId = leftDisplayId
+        self.leftNickname = leftNickname
+        self.rightUserId = rightUserId
+        self.rightDisplayId = rightDisplayId
+        self.rightNickname = rightNickname
+        self.leftScore = leftScore
+        self.rightScore = rightScore
+        self.leftResult = leftResult
+        self.rightResult = rightResult
+        self.leftComboCount = leftComboCount
+        self.rightComboCount = rightComboCount
+    }
+}
+
+public struct LinkMicBattleTaskEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let battleId: String?
+    public let messageType: Int?
+    public let taskProgress: Int?
+    public let fromUserUid: String?
+    public let taskResult: Int?
+    public let rewardStartTimestamp: String?
+    public let rewardStartTime: Int?
+    public let rewardMultiple: Int?
+    public let rewardSettleAmount: Int?
+    public let rewardStatus: Int?
+    public let progressTarget: Int?
+
+    public init(
+        roomId: String?,
+        battleId: String?,
+        messageType: Int?,
+        taskProgress: Int?,
+        fromUserUid: String?,
+        taskResult: Int?,
+        rewardStartTimestamp: String?,
+        rewardStartTime: Int?,
+        rewardMultiple: Int?,
+        rewardSettleAmount: Int?,
+        rewardStatus: Int?,
+        progressTarget: Int?
+    ) {
+        self.roomId = roomId
+        self.battleId = battleId
+        self.messageType = messageType
+        self.taskProgress = taskProgress
+        self.fromUserUid = fromUserUid
+        self.taskResult = taskResult
+        self.rewardStartTimestamp = rewardStartTimestamp
+        self.rewardStartTime = rewardStartTime
+        self.rewardMultiple = rewardMultiple
+        self.rewardSettleAmount = rewardSettleAmount
+        self.rewardStatus = rewardStatus
+        self.progressTarget = progressTarget
+    }
+}
+
+public struct UnauthorizedMemberEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let nickname: String?
+    public let action: Int?
+    public let enterText: String?
+
+    public init(roomId: String?, nickname: String?, action: Int?, enterText: String?) {
+        self.roomId = roomId
+        self.nickname = nickname
+        self.action = action
+        self.enterText = enterText
+    }
+}
+
+public struct ModerationDeleteEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let deletedUserIds: [String]
+    public let deletedMessageIds: [String]
+
+    public init(roomId: String?, deletedUserIds: [String], deletedMessageIds: [String]) {
+        self.roomId = roomId
+        self.deletedUserIds = deletedUserIds
+        self.deletedMessageIds = deletedMessageIds
+    }
+}
+
+public struct LinkMicBattlePunishFinishEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let battleId: String?
+    public let channelId: String?
+    public let operatorUserId: String?
+    public let reason: Int?
+    public let status: Int?
+    public let endTimeMs: String?
+
+    public init(
+        roomId: String?,
+        battleId: String?,
+        channelId: String?,
+        operatorUserId: String?,
+        reason: Int?,
+        status: Int?,
+        endTimeMs: String?
+    ) {
+        self.roomId = roomId
+        self.battleId = battleId
+        self.channelId = channelId
+        self.operatorUserId = operatorUserId
+        self.reason = reason
+        self.status = status
+        self.endTimeMs = endTimeMs
+    }
+}
+
+public struct LinkMessageEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let scene: Int?
+    public let linkerId: String?
+    public let messageType: Int?
+    public let expireTimestamp: String?
+    public let extra: String?
+    public let transferExtra: String?
+
+    public init(
+        roomId: String?,
+        scene: Int?,
+        linkerId: String?,
+        messageType: Int?,
+        expireTimestamp: String?,
+        extra: String?,
+        transferExtra: String?
+    ) {
+        self.roomId = roomId
+        self.scene = scene
+        self.linkerId = linkerId
+        self.messageType = messageType
+        self.expireTimestamp = expireTimestamp
+        self.extra = extra
+        self.transferExtra = transferExtra
+    }
+}
+
 public enum EulerDocumentedEventKind: String, CaseIterable, Sendable {
     case roomInfo = "room_info"
     case member = "member"
