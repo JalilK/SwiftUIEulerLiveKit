@@ -1,5 +1,4 @@
 import Foundation
-import CryptoKit
 
 public struct EulerUnknownPayloadManifestEntry: Codable, Sendable, Equatable {
     public let eventName: String
@@ -213,12 +212,20 @@ public actor EulerUnknownPayloadSink {
         }
         let raw = String(unicodeScalars)
         let collapsed = raw.replacingOccurrences(of: "_+", with: "_", options: .regularExpression)
-        return collapsed.trimmingCharacters(in: CharacterSet(charactersIn: "_")).isEmpty ? "unknown" : collapsed.trimmingCharacters(in: CharacterSet(charactersIn: "_"))
+        let trimmed = collapsed.trimmingCharacters(in: CharacterSet(charactersIn: "_"))
+        return trimmed.isEmpty ? "unknown" : trimmed
     }
 
     private static func shortHash(of value: String) -> String {
-        let digest = SHA256.hash(data: Data(value.utf8))
-        return digest.compactMap { String(format: "%02x", $0) }.joined().prefix(16).description
+        var hash: UInt64 = 14695981039346656037
+        let prime: UInt64 = 1099511628211
+
+        for byte in value.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* prime
+        }
+
+        return String(format: "%016llx", hash)
     }
 
     private static func timestampString(from date: Date) -> String {
