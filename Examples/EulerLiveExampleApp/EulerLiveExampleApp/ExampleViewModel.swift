@@ -2,21 +2,33 @@ import Foundation
 import SwiftUI
 import EulerLiveKit
 
+private let schemaVerifiedEventNames: Set<String> = [
+    "room_info",
+    "member",
+    "chat",
+    "room_user",
+    "live_intro",
+    "room_message",
+    "worker_info",
+    "tiktok.connect"
+]
+
+private func shouldLogForSchemaDiscovery(_ record: EulerDebugEventRecord) -> Bool {
+    if record.decodedTypedEvent == nil {
+        return true
+    }
+
+    if case .unknown = record.decodedTypedEvent {
+        return true
+    }
+
+    return !schemaVerifiedEventNames.contains(record.eventName)
+}
+
 @MainActor
 final class ExampleViewModel: ObservableObject {
     private static let lastSuccessfulUniqueIdDefaultsKey = "EulerLiveExampleApp.lastSuccessfulUniqueId"
     private static let workerBaseURL = "https://euler-token-worker.swiftui-euler-api-key.workers.dev"
-
-    private static let verifiedEventNames: Set<String> = [
-        "room_info",
-        "member",
-        "chat",
-        "room_user",
-        "live_intro",
-        "room_message",
-        "worker_info",
-        "tiktok.connect"
-    ]
 
     private let userDefaults = UserDefaults.standard
 
@@ -86,7 +98,7 @@ final class ExampleViewModel: ObservableObject {
         }
 
         client.onEventRecord = { [weak self] record in
-            if Self.shouldLogForSchemaDiscovery(record) {
+            if shouldLogForSchemaDiscovery(record) {
                 EulerConsolePayloadPrinter.printLogBlock(for: record)
             }
 
@@ -129,18 +141,6 @@ final class ExampleViewModel: ObservableObject {
 
     private func refreshCoverage() {
         coverage = EulerEventDecoder.documentedEventCoverage(from: records)
-    }
-
-    private static func shouldLogForSchemaDiscovery(_ record: EulerDebugEventRecord) -> Bool {
-        if record.decodedTypedEvent == nil {
-            return true
-        }
-
-        if case .unknown = record.decodedTypedEvent {
-            return true
-        }
-
-        return !verifiedEventNames.contains(record.eventName)
     }
 
     private static func presentableStatus(_ status: EulerConnectionStatus) -> (headline: String, detail: String, technicalDetail: String?) {
