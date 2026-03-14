@@ -1,7 +1,7 @@
 import Foundation
 
-enum EulerEventDecoder {
-    static func decodeRecord(from rawPayload: String, receivedAt: Date = Date()) -> EulerDebugEventRecord {
+public enum EulerEventDecoder {
+    public static func decodeRecord(from rawPayload: String, receivedAt: Date = Date()) -> EulerDebugEventRecord {
         guard let data = rawPayload.data(using: .utf8) else {
             return EulerDebugEventRecord(
                 eventName: "invalid_payload",
@@ -45,7 +45,7 @@ enum EulerEventDecoder {
         )
     }
 
-    static func documentedEventCoverage(from records: [EulerDebugEventRecord]) -> [EulerDocumentedEventCoverage] {
+    public static func documentedEventCoverage(from records: [EulerDebugEventRecord]) -> [EulerDocumentedEventCoverage] {
         EulerDocumentedEventKind.allCases.map { event in
             let matches = records.filter { record in
                 recordMatchesDocumentedEvent(record, documentedEvent: event)
