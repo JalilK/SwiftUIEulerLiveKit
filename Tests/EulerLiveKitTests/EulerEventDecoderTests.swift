@@ -101,6 +101,43 @@ struct EulerEventDecoderTests {
     }
 
     @Test
+    func decodesObservedFollowSocialEnvelope() {
+        let payload = #"{"messages":[{"type":"WebcastSocialMessage","data":{"common":{"displayText":{"defaultPattern":"{0:user} followed the LIVE creator"}},"user":{"userId":"6712228768397870085","uniqueId":"xavierpenguin","nickname":"Xavier"},"action":"1","followCount":36845,"shareCount":0}}],"timestamp":1773505697141}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "follow")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .follow(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected follow event")
+            return
+        }
+
+        #expect(event.userId == nil)
+        #expect(event.uniqueId == "xavierpenguin")
+        #expect(event.nickname == "Xavier")
+        #expect(event.followerCount == 36845)
+    }
+
+    @Test
+    func decodesObservedShareSocialEnvelope() {
+        let payload = #"{"messages":[{"type":"WebcastSocialMessage","data":{"common":{"displayText":{"defaultPattern":"{0:user} shared the LIVE"}},"user":{"userId":"7039496064566723589","uniqueId":"ralphbryant3","nickname":"ralphbryant3"},"action":"3","followCount":0,"shareCount":36}}],"timestamp":1773505883849}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "share")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .share(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected share event")
+            return
+        }
+
+        #expect(event.uniqueId == "ralphbryant3")
+        #expect(event.nickname == "ralphbryant3")
+        #expect(event.shareCount == 36)
+    }
+
+    @Test
     func decodesWorkerInfoEnvelope() {
         let payload = #"{"messages":[{"type":"workerInfo","data":{"isLoggedIn":false,"webSocketId":"49390ba9-2016-48d3-b6ee-fb0a78107653","schemaVersion":"v2","features":{"bundleEvents":true,"rawMessages":false}}}],"timestamp":1773501365349}"#
         let record = EulerEventDecoder.decodeRecord(from: payload)
@@ -163,10 +200,12 @@ struct EulerEventDecoderTests {
 
         #expect(record.eventName == "room_info")
         #expect(record.decodeOutcome == .decoded)
+
         guard case .roomInfo(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected room info event")
             return
         }
+
         #expect(event.roomId == "12345")
         #expect(event.uniqueId == "tv_asahi_news")
         #expect(event.nickname == "TV Asahi")

@@ -51,6 +51,7 @@ public enum EulerEventDecoder {
                 recordMatchesDocumentedEvent(record, documentedEvent: event)
             }
             let payloadTypes = Array(Set(matches.compactMap { extractPrimaryMessageType(fromRawPayload: $0.rawPayload) })).sorted()
+
             return EulerDocumentedEventCoverage(
                 event: event,
                 implemented: matches.contains { $0.decodedTypedEvent?.eventName == event.rawValue },
@@ -84,10 +85,10 @@ public enum EulerEventDecoder {
             let hasStrongData = event.comment != nil || event.uniqueId != nil || event.nickname != nil
             return hasStrongData ? .decoded : .decodedWithPartialData
         case .follow(let event):
-            let hasStrongData = event.uniqueId != nil || event.nickname != nil
+            let hasStrongData = event.uniqueId != nil || event.nickname != nil || event.followerCount != nil
             return hasStrongData ? .decoded : .decodedWithPartialData
         case .share(let event):
-            let hasStrongData = event.uniqueId != nil || event.nickname != nil
+            let hasStrongData = event.uniqueId != nil || event.nickname != nil || event.shareCount != nil
             return hasStrongData ? .decoded : .decodedWithPartialData
         case .roomUser(let event):
             let hasStrongData = event.viewerCount != nil || event.topGifterUniqueId != nil || event.topGifterNickname != nil
@@ -109,6 +110,9 @@ public enum EulerEventDecoder {
 
     private static func normalizedEventName(from object: [String: Any]) -> String {
         if let primaryType = extractPrimaryMessageType(from: object) {
+            if primaryType.caseInsensitiveCompare("WebcastSocialMessage") == .orderedSame {
+                return socialEventName(from: object)
+            }
             return canonicalEventName(primaryType)
         }
 
@@ -121,6 +125,30 @@ public enum EulerEventDecoder {
         }
 
         return "unknown"
+    }
+
+    private static func socialEventName(from object: [String: Any]) -> String {
+        if let action = findString(in: object, matchingAnyOf: ["action"]) {
+            switch action {
+            case "1":
+                return "follow"
+            case "3":
+                return "share"
+            default:
+                break
+            }
+        }
+
+        if let pattern = findString(in: object, matchingAnyOf: ["defaultPattern"])?.lowercased() {
+            if pattern.contains("followed the live") {
+                return "follow"
+            }
+            if pattern.contains("shared the live") {
+                return "share"
+            }
+        }
+
+        return "webcastsocialmessage"
     }
 
     private static func canonicalEventName(_ value: String) -> String {
@@ -220,7 +248,7 @@ public enum EulerEventDecoder {
                 FollowEvent(
                     uniqueId: findString(in: payload, matchingAnyOf: ["uniqueId", "unique_id"]),
                     nickname: findString(in: payload, matchingAnyOf: ["nickname", "nickName", "displayName"]),
-                    followerCount: findInt(in: payload, matchingAnyOf: ["followerCount"])
+                    followerCount: findInt(in: payload, matchingAnyOf: ["followCount"])
                 )
             )
         case "share":
@@ -307,9 +335,9 @@ public enum EulerEventDecoder {
         case .chat:
             return record.eventName == "chat" || primaryType == "webcastchatmessage"
         case .follow:
-            return record.eventName == "follow"
+            return record.eventName == "follow" || primaryType == "webcastsocialmessage"
         case .share:
-            return record.eventName == "share"
+            return record.eventName == "share" || primaryType == "webcastsocialmessage"
         case .roomUser:
             return record.eventName == "room_user" || primaryType == "webcastroomuserseqmessage"
         case .liveIntro:

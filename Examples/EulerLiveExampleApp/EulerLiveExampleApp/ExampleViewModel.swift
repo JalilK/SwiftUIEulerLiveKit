@@ -10,7 +10,9 @@ private let schemaVerifiedEventNames: Set<String> = [
     "live_intro",
     "room_message",
     "worker_info",
-    "tiktok.connect"
+    "tiktok.connect",
+    "follow",
+    "share"
 ]
 
 private func shouldLogForSchemaDiscovery(_ record: EulerDebugEventRecord) -> Bool {
