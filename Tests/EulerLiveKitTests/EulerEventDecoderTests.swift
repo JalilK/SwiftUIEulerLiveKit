@@ -68,7 +68,7 @@ struct EulerEventDecoderTests {
         #expect(event.repeatCount == 1)
         #expect(event.repeatEnd == false)
         #expect(event.giftType == 1)
-        #expect(event.displayText == "{0:user} sent {1:gift} × {2:string}")
+        #expect(event.displayText == "Ebenezer Cerda Gomez: gifted the host 1 Rose")
     }
 
     @Test
@@ -91,6 +91,6 @@ struct EulerEventDecoderTests {
         #expect(event.repeatCount == 1)
         #expect(event.repeatEnd == true)
         #expect(event.giftType == 1)
-        #expect(event.displayText == "{0:user} sent {1:gift} × {2:string}")
+        #expect(event.displayText == "Maya: gifted the host 1 Rose")
     }
 }
