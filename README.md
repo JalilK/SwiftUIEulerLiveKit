@@ -75,3 +75,30 @@ swift test
 ## Example app
 
 The example app now includes a real Xcode project at `Examples/EulerLiveExampleApp/EulerLiveExampleApp.xcodeproj`. Open that project in Xcode to run the payload inspection harness against the deployed Cloudflare Worker token route.
+
+## Concrete event models
+
+SwiftUIEulerLiveKit now models the following live payload families as concrete native types.
+
+### Stable models
+
+- `room_info`
+- `member`
+- `gift`
+- `like`
+- `chat`
+- `follow`
+- `share`
+- `room_user`
+- `live_intro`
+- `room_message`
+- `caption_message`
+- `barrage`
+- `link_mic_fan_ticket_method`
+- `link_mic_armies`
+
+### Active schema-discovery target
+
+- `link_layer`
+
+The example app focuses console logging on unknown payloads to accelerate schema discovery.
