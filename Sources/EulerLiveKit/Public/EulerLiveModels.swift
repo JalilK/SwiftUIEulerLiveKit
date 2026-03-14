@@ -54,6 +54,9 @@ public struct GiftEvent: Sendable, Equatable, Hashable {
     public let repeatEnd: Bool?
     public let giftType: Int?
     public let displayText: String?
+    public let groupId: String?
+    public let comboCount: Int?
+    public let diamondCount: Int?
 
     public init(
         uniqueId: String?,
@@ -63,7 +66,10 @@ public struct GiftEvent: Sendable, Equatable, Hashable {
         repeatCount: Int?,
         repeatEnd: Bool? = nil,
         giftType: Int? = nil,
-        displayText: String? = nil
+        displayText: String? = nil,
+        groupId: String? = nil,
+        comboCount: Int? = nil,
+        diamondCount: Int? = nil
     ) {
         self.uniqueId = uniqueId
         self.nickname = nickname
@@ -73,6 +79,9 @@ public struct GiftEvent: Sendable, Equatable, Hashable {
         self.repeatEnd = repeatEnd
         self.giftType = giftType
         self.displayText = displayText
+        self.groupId = groupId
+        self.comboCount = comboCount
+        self.diamondCount = diamondCount
     }
 }
 
@@ -81,12 +90,14 @@ public struct LikeEvent: Sendable, Equatable, Hashable {
     public let nickname: String?
     public let likeCount: Int?
     public let totalLikeCount: Int?
+    public let displayText: String?
 
-    public init(uniqueId: String?, nickname: String?, likeCount: Int?, totalLikeCount: Int?) {
+    public init(uniqueId: String?, nickname: String?, likeCount: Int?, totalLikeCount: Int?, displayText: String? = nil) {
         self.uniqueId = uniqueId
         self.nickname = nickname
         self.likeCount = likeCount
         self.totalLikeCount = totalLikeCount
+        self.displayText = displayText
     }
 }
 
@@ -291,6 +302,77 @@ public struct LinkMicFanTicketEvent: Sendable, Equatable, Hashable {
     }
 }
 
+public struct LinkMicArmyUser: Sendable, Equatable, Hashable {
+    public let userId: String?
+    public let userIdStr: String?
+    public let nickname: String?
+    public let score: Int?
+    public let diamondScore: Int?
+
+    public init(userId: String?, userIdStr: String?, nickname: String?, score: Int?, diamondScore: Int?) {
+        self.userId = userId
+        self.userIdStr = userIdStr
+        self.nickname = nickname
+        self.score = score
+        self.diamondScore = diamondScore
+    }
+}
+
+public struct LinkMicArmySide: Sendable, Equatable, Hashable {
+    public let anchorId: String
+    public let hostScore: Int?
+    public let users: [LinkMicArmyUser]
+
+    public init(anchorId: String, hostScore: Int?, users: [LinkMicArmyUser]) {
+        self.anchorId = anchorId
+        self.hostScore = hostScore
+        self.users = users
+    }
+}
+
+public struct LinkMicArmiesEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let battleId: String?
+    public let channelId: String?
+    public let battleStatus: Int?
+    public let giftId: Int?
+    public let giftCount: Int?
+    public let repeatCount: Int?
+    public let totalDiamondCount: Int?
+    public let fromUserId: String?
+    public let scoreUpdateTime: Int?
+    public let giftSentTime: Int?
+    public let sides: [LinkMicArmySide]
+
+    public init(
+        roomId: String?,
+        battleId: String?,
+        channelId: String?,
+        battleStatus: Int?,
+        giftId: Int?,
+        giftCount: Int?,
+        repeatCount: Int?,
+        totalDiamondCount: Int?,
+        fromUserId: String?,
+        scoreUpdateTime: Int?,
+        giftSentTime: Int?,
+        sides: [LinkMicArmySide]
+    ) {
+        self.roomId = roomId
+        self.battleId = battleId
+        self.channelId = channelId
+        self.battleStatus = battleStatus
+        self.giftId = giftId
+        self.giftCount = giftCount
+        self.repeatCount = repeatCount
+        self.totalDiamondCount = totalDiamondCount
+        self.fromUserId = fromUserId
+        self.scoreUpdateTime = scoreUpdateTime
+        self.giftSentTime = giftSentTime
+        self.sides = sides
+    }
+}
+
 public struct WorkerInfoEvent: Sendable, Equatable, Hashable {
     public let webSocketId: String?
     public let schemaVersion: String?
@@ -326,8 +408,79 @@ public enum EulerDocumentedEventKind: String, CaseIterable, Sendable {
     case roomUser = "room_user"
     case liveIntro = "live_intro"
     case roomMessage = "room_message"
+    case captionMessage = "caption_message"
+    case barrage = "barrage"
+    case linkMicFanTicketMethod = "link_mic_fan_ticket_method"
+    case linkMicArmies = "link_mic_armies"
+    case linkLayer = "link_layer"
 
-    public var displayName: String { rawValue }
+    public var displayName: String {
+        rawValue
+    }
+
+    public var title: String {
+        switch self {
+        case .roomInfo: return "Room info"
+        case .member: return "Member"
+        case .gift: return "Gift"
+        case .like: return "Like"
+        case .chat: return "Chat"
+        case .follow: return "Follow"
+        case .share: return "Share"
+        case .roomUser: return "Room user"
+        case .liveIntro: return "Live intro"
+        case .roomMessage: return "Room message"
+        case .captionMessage: return "Caption message"
+        case .barrage: return "Barrage"
+        case .linkMicFanTicketMethod: return "LinkMic fan ticket"
+        case .linkMicArmies: return "LinkMic armies"
+        case .linkLayer: return "Link layer"
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .roomInfo:
+            return "Creator and room metadata announced when a live connection becomes usable."
+        case .member:
+            return "A viewer entered the room. This maps to join style activity."
+        case .gift:
+            return "A viewer sent a gift. This maps to TikTok gifting, streaks, combos, and gift identity."
+        case .like:
+            return "A viewer liked the live. This maps to TikTok LIVE like and total-like updates."
+        case .chat:
+            return "A viewer sent a chat message."
+        case .follow:
+            return "A viewer followed the creator. This is derived from TikTok social activity."
+        case .share:
+            return "A viewer shared the live. This is derived from TikTok social activity."
+        case .roomUser:
+            return "Room-level audience and ranking update such as viewer count and top gifters."
+        case .liveIntro:
+            return "Introductory metadata about the current live session and host."
+        case .roomMessage:
+            return "System-style room notice such as filtered-comment notices, fan-club notices, or other room level banners."
+        case .captionMessage:
+            return "Live captions or speech transcription lines generated during the stream."
+        case .barrage:
+            return "Animated or high-visibility overlay style message, often tied to badges, privilege banners, or entrance effects."
+        case .linkMicFanTicketMethod:
+            return "Battle and LinkMic fan-ticket score notice for the current battle session."
+        case .linkMicArmies:
+            return "Battle army scoreboard snapshot containing both sides, supporter ranks, and host scores."
+        case .linkLayer:
+            return "Battle and co-host session plumbing. This still needs more live capture before public modeling is reliable."
+        }
+    }
+
+    public var implemented: Bool {
+        switch self {
+        case .linkLayer:
+            return false
+        default:
+            return true
+        }
+    }
 }
 
 public struct EulerDocumentedEventCoverage: Sendable, Equatable {

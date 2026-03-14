@@ -57,7 +57,7 @@ public enum EulerEventDecoder {
 
             return EulerDocumentedEventCoverage(
                 event: event,
-                implemented: matches.contains { $0.decodedTypedEvent?.eventName == event.rawValue },
+                implemented: event.implemented,
                 observedRecordCount: matches.count,
                 observedPayloadTypes: payloadTypes
             )
@@ -107,6 +107,9 @@ public enum EulerEventDecoder {
             return hasStrongData ? .decoded : .decodedWithPartialData
         case .linkMicFanTicket(let event):
             let hasStrongData = event.totalLinkMicFanTicket != nil || !event.users.isEmpty
+            return hasStrongData ? .decoded : .decodedWithPartialData
+        case .linkMicArmies(let event):
+            let hasStrongData = event.battleId != nil || !event.sides.isEmpty
             return hasStrongData ? .decoded : .decodedWithPartialData
         case .workerInfo(let event):
             let hasStrongData = event.webSocketId != nil || event.schemaVersion != nil
@@ -186,6 +189,10 @@ public enum EulerEventDecoder {
             return "barrage"
         case "linkmicfanticketmethod", "link_mic_fan_ticket_method", "webcastlinkmicfanticketmethod":
             return "link_mic_fan_ticket_method"
+        case "linkmicarmies", "link_mic_armies", "webcastlinkmicarmies":
+            return "link_mic_armies"
+        case "linklayermessage", "link_layer", "webcastlinklayermessage":
+            return "link_layer"
         case "workerinfo", "worker_info":
             return "worker_info"
         case "tiktok.connect":
@@ -229,7 +236,10 @@ public enum EulerEventDecoder {
                     repeatCount: findInt(in: payload, matchingAnyOf: ["repeatCount", "repeat_count", "comboCount", "count"]),
                     repeatEnd: findBool(in: payload, matchingAnyOf: ["repeatEnd"]),
                     giftType: findInt(in: payload, matchingAnyOf: ["giftType"]),
-                    displayText: findString(in: payload, matchingAnyOf: ["defaultPattern", "describe"])
+                    displayText: findString(in: payload, matchingAnyOf: ["describe", "defaultPattern"]),
+                    groupId: findString(in: payload, matchingAnyOf: ["groupId"]),
+                    comboCount: findInt(in: payload, matchingAnyOf: ["comboCount"]),
+                    diamondCount: findInt(in: payload, matchingAnyOf: ["diamondCount"])
                 )
             )
         case "like":
@@ -237,8 +247,9 @@ public enum EulerEventDecoder {
                 LikeEvent(
                     uniqueId: findString(in: payload, matchingAnyOf: ["uniqueId", "unique_id"]),
                     nickname: findString(in: payload, matchingAnyOf: ["nickname", "nickName", "displayName"]),
-                    likeCount: findInt(in: payload, matchingAnyOf: ["likeCount", "like_count", "count"]),
-                    totalLikeCount: findInt(in: payload, matchingAnyOf: ["totalLikeCount", "totalLikes", "total_like_count", "totalCount"])
+                    likeCount: findInt(in: payload, matchingAnyOf: ["likeCount", "count"]),
+                    totalLikeCount: findInt(in: payload, matchingAnyOf: ["totalLikeCount", "totalLikes"]),
+                    displayText: findString(in: payload, matchingAnyOf: ["defaultPattern"])
                 )
             )
         case "chat":
@@ -332,6 +343,23 @@ public enum EulerEventDecoder {
                     users: extractLinkMicFanTicketUsers(from: payload)
                 )
             )
+        case "link_mic_armies":
+            return .linkMicArmies(
+                LinkMicArmiesEvent(
+                    roomId: findString(in: payload, matchingAnyOf: ["roomId", "room_id"]),
+                    battleId: findString(in: payload, matchingAnyOf: ["battleId"]),
+                    channelId: findString(in: payload, matchingAnyOf: ["channelId"]),
+                    battleStatus: findInt(in: payload, matchingAnyOf: ["battleStatus"]),
+                    giftId: findInt(in: payload, matchingAnyOf: ["giftId"]),
+                    giftCount: findInt(in: payload, matchingAnyOf: ["giftCount"]),
+                    repeatCount: findInt(in: payload, matchingAnyOf: ["repeatCount"]),
+                    totalDiamondCount: findInt(in: payload, matchingAnyOf: ["totalDiamondCount"]),
+                    fromUserId: findString(in: payload, matchingAnyOf: ["fromUserId"]),
+                    scoreUpdateTime: findInt(in: payload, matchingAnyOf: ["scoreUpdateTime"]),
+                    giftSentTime: findInt(in: payload, matchingAnyOf: ["giftSentTime"]),
+                    sides: extractLinkMicArmySides(from: payload)
+                )
+            )
         case "worker_info":
             return .workerInfo(
                 WorkerInfoEvent(
@@ -368,6 +396,11 @@ public enum EulerEventDecoder {
         case .roomUser: return record.eventName == "room_user" || primaryType == "webcastroomuserseqmessage"
         case .liveIntro: return record.eventName == "live_intro" || primaryType == "webcastliveintromessage"
         case .roomMessage: return record.eventName == "room_message" || primaryType == "webcastroommessage"
+        case .captionMessage: return record.eventName == "caption_message" || primaryType == "webcastcaptionmessage"
+        case .barrage: return record.eventName == "barrage" || primaryType == "webcastbarragemessage"
+        case .linkMicFanTicketMethod: return record.eventName == "link_mic_fan_ticket_method" || primaryType == "webcastlinkmicfanticketmethod"
+        case .linkMicArmies: return record.eventName == "link_mic_armies" || primaryType == "webcastlinkmicarmies"
+        case .linkLayer: return record.eventName == "link_layer" || primaryType == "webcastlinklayermessage"
         }
     }
 
@@ -381,10 +414,8 @@ public enum EulerEventDecoder {
     }
 
     private static func extractPrimaryMessageType(fromRawPayload rawPayload: String) -> String? {
-        guard
-            let data = rawPayload.data(using: .utf8),
-            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        else {
+        guard let data = rawPayload.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
         }
         return extractPrimaryMessageType(from: json)
@@ -411,19 +442,79 @@ public enum EulerEventDecoder {
         }
     }
 
-    private static func findArray(in value: Any, matchingAnyOf keys: [String]) -> [Any]? {
+    private static func extractLinkMicArmySides(from payload: [String: Any]) -> [LinkMicArmySide] {
+        guard let battleItems = findDictionary(in: payload, matchingAnyOf: ["battleItems"]) else { return [] }
+
+        return battleItems.compactMap { key, value in
+            guard let sideObject = value as? [String: Any] else { return nil }
+
+            let hostScore = int(fromAny: sideObject["hostScore"]) ?? findInt(in: sideObject, matchingAnyOf: ["hostScore"])
+            let anchorId = (sideObject["anchorIdStr"] as? String) ?? key
+
+            let users: [LinkMicArmyUser]
+            if let userArmy = sideObject["userArmy"] as? [[String: Any]] {
+                users = userArmy.map { userObject in
+                    LinkMicArmyUser(
+                        userId: userObject["userId"] as? String,
+                        userIdStr: userObject["userIdStr"] as? String,
+                        nickname: userObject["nickname"] as? String,
+                        score: int(fromAny: userObject["score"]),
+                        diamondScore: int(fromAny: userObject["diamondScore"])
+                    )
+                }
+            } else {
+                users = []
+            }
+
+            return LinkMicArmySide(anchorId: anchorId, hostScore: hostScore, users: users)
+        }
+        .sorted { $0.anchorId < $1.anchorId }
+    }
+
+    private static func findDictionary(in value: Any, matchingAnyOf keys: [String]) -> [String: Any]? {
         if let object = value as? [String: Any] {
             for key in keys {
-                if let array = object[key] as? [Any] { return array }
+                if let nested = object[key] as? [String: Any] {
+                    return nested
+                }
             }
             for child in object.values {
-                if let array = findArray(in: child, matchingAnyOf: keys) { return array }
+                if let nested = findDictionary(in: child, matchingAnyOf: keys) {
+                    return nested
+                }
             }
         }
 
         if let array = value as? [Any] {
             for item in array {
-                if let nested = findArray(in: item, matchingAnyOf: keys) { return nested }
+                if let nested = findDictionary(in: item, matchingAnyOf: keys) {
+                    return nested
+                }
+            }
+        }
+
+        return nil
+    }
+
+    private static func findArray(in value: Any, matchingAnyOf keys: [String]) -> [Any]? {
+        if let object = value as? [String: Any] {
+            for key in keys {
+                if let array = object[key] as? [Any] {
+                    return array
+                }
+            }
+            for child in object.values {
+                if let array = findArray(in: child, matchingAnyOf: keys) {
+                    return array
+                }
+            }
+        }
+
+        if let array = value as? [Any] {
+            for item in array {
+                if let nested = findArray(in: item, matchingAnyOf: keys) {
+                    return nested
+                }
             }
         }
 

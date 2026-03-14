@@ -2,22 +2,6 @@ import Foundation
 import SwiftUI
 import EulerLiveKit
 
-private let schemaVerifiedEventNames: Set<String> = [
-    "room_info",
-    "member",
-    "chat",
-    "room_user",
-    "live_intro",
-    "caption_message",
-    "barrage",
-    "link_mic_fan_ticket_method",
-    "worker_info",
-    "tiktok.connect",
-    "follow",
-    "share",
-    "like"
-]
-
 private let schemaDiscoveryTargetEventNames: Set<String> = []
 
 private func shouldLogForSchemaDiscovery(_ record: EulerDebugEventRecord) -> Bool {

@@ -14,44 +14,30 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
     case caption(CaptionEvent)
     case barrage(BarrageEvent)
     case linkMicFanTicket(LinkMicFanTicketEvent)
+    case linkMicArmies(LinkMicArmiesEvent)
     case workerInfo(WorkerInfoEvent)
     case transportConnect(TransportConnectEvent)
     case unknown(eventName: String)
 
     public var eventName: String {
         switch self {
-        case .roomInfo:
-            return "room_info"
-        case .member:
-            return "member"
-        case .gift:
-            return "gift"
-        case .like:
-            return "like"
-        case .comment:
-            return "chat"
-        case .follow:
-            return "follow"
-        case .share:
-            return "share"
-        case .roomUser:
-            return "room_user"
-        case .liveIntro:
-            return "live_intro"
-        case .roomMessage:
-            return "room_message"
-        case .caption:
-            return "caption_message"
-        case .barrage:
-            return "barrage"
-        case .linkMicFanTicket:
-            return "link_mic_fan_ticket_method"
-        case .workerInfo:
-            return "worker_info"
-        case .transportConnect:
-            return "tiktok.connect"
-        case .unknown(let eventName):
-            return eventName
+        case .roomInfo: return "room_info"
+        case .member: return "member"
+        case .gift: return "gift"
+        case .like: return "like"
+        case .comment: return "chat"
+        case .follow: return "follow"
+        case .share: return "share"
+        case .roomUser: return "room_user"
+        case .liveIntro: return "live_intro"
+        case .roomMessage: return "room_message"
+        case .caption: return "caption_message"
+        case .barrage: return "barrage"
+        case .linkMicFanTicket: return "link_mic_fan_ticket_method"
+        case .linkMicArmies: return "link_mic_armies"
+        case .workerInfo: return "worker_info"
+        case .transportConnect: return "tiktok.connect"
+        case .unknown(let eventName): return eventName
         }
     }
 
@@ -62,7 +48,7 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
         case .member(let event):
             return "member user=\(event.uniqueId ?? event.nickname ?? "unknown") viewers=\(event.viewerCount.map(String.init) ?? "nil")"
         case .gift(let event):
-            return "gift name=\(event.giftName ?? "unknown") user=\(event.uniqueId ?? event.nickname ?? "unknown") repeat=\(event.repeatCount.map(String.init) ?? "nil")"
+            return "gift name=\(event.giftName ?? "unknown") user=\(event.uniqueId ?? event.nickname ?? "unknown") repeat=\(event.repeatCount.map(String.init) ?? "nil") combo=\(event.comboCount.map(String.init) ?? "nil")"
         case .like(let event):
             return "like count=\(event.likeCount.map(String.init) ?? "nil") total=\(event.totalLikeCount.map(String.init) ?? "nil") user=\(event.uniqueId ?? event.nickname ?? "unknown")"
         case .comment(let event):
@@ -83,12 +69,53 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
             return "barrage user=\(event.uniqueId ?? event.nickname ?? "unknown") text=\(event.displayText ?? "")"
         case .linkMicFanTicket(let event):
             return "linkMicFanTicket total=\(event.totalLinkMicFanTicket.map(String.init) ?? "nil") users=\(event.users.count)"
+        case .linkMicArmies(let event):
+            return "linkMicArmies battle=\(event.battleId ?? "nil") sides=\(event.sides.count) diamonds=\(event.totalDiamondCount.map(String.init) ?? "nil")"
         case .workerInfo(let event):
             return "workerInfo schema=\(event.schemaVersion ?? "nil") socket=\(event.webSocketId ?? "nil")"
         case .transportConnect(let event):
             return "tiktok.connect agentId=\(event.agentId ?? "nil")"
         case .unknown(let eventName):
             return "unknown event=\(eventName)"
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .roomInfo:
+            return EulerDocumentedEventKind.roomInfo.description
+        case .member:
+            return EulerDocumentedEventKind.member.description
+        case .gift:
+            return EulerDocumentedEventKind.gift.description
+        case .like:
+            return EulerDocumentedEventKind.like.description
+        case .comment:
+            return EulerDocumentedEventKind.chat.description
+        case .follow:
+            return EulerDocumentedEventKind.follow.description
+        case .share:
+            return EulerDocumentedEventKind.share.description
+        case .roomUser:
+            return EulerDocumentedEventKind.roomUser.description
+        case .liveIntro:
+            return EulerDocumentedEventKind.liveIntro.description
+        case .roomMessage:
+            return EulerDocumentedEventKind.roomMessage.description
+        case .caption:
+            return EulerDocumentedEventKind.captionMessage.description
+        case .barrage:
+            return EulerDocumentedEventKind.barrage.description
+        case .linkMicFanTicket:
+            return EulerDocumentedEventKind.linkMicFanTicketMethod.description
+        case .linkMicArmies:
+            return EulerDocumentedEventKind.linkMicArmies.description
+        case .workerInfo:
+            return "Worker-side transport metadata."
+        case .transportConnect:
+            return "Transport connection bootstrap metadata."
+        case .unknown:
+            return "A live payload that has not been modeled yet."
         }
     }
 }
