@@ -52,6 +52,8 @@ public struct GiftEvent: Sendable, Equatable, Hashable {
     public let giftId: Int?
     public let repeatCount: Int?
     public let repeatEnd: Bool?
+    public let giftType: Int?
+    public let displayText: String?
 
     public init(
         uniqueId: String?,
@@ -59,7 +61,9 @@ public struct GiftEvent: Sendable, Equatable, Hashable {
         giftName: String?,
         giftId: Int?,
         repeatCount: Int?,
-        repeatEnd: Bool? = nil
+        repeatEnd: Bool? = nil,
+        giftType: Int? = nil,
+        displayText: String? = nil
     ) {
         self.uniqueId = uniqueId
         self.nickname = nickname
@@ -67,6 +71,8 @@ public struct GiftEvent: Sendable, Equatable, Hashable {
         self.giftId = giftId
         self.repeatCount = repeatCount
         self.repeatEnd = repeatEnd
+        self.giftType = giftType
+        self.displayText = displayText
     }
 }
 
@@ -174,6 +180,114 @@ public struct RoomMessageEvent: Sendable, Equatable, Hashable {
         self.source = source
         self.scene = scene
         self.displayText = displayText
+    }
+}
+
+public struct CaptionLine: Sendable, Equatable, Hashable {
+    public let language: String?
+    public let content: String?
+
+    public init(language: String?, content: String?) {
+        self.language = language
+        self.content = content
+    }
+}
+
+public struct CaptionEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let timestampMs: Int?
+    public let durationMs: Int?
+    public let sentenceId: String?
+    public let sequenceId: String?
+    public let definite: Bool?
+    public let lines: [CaptionLine]
+
+    public init(
+        roomId: String?,
+        timestampMs: Int?,
+        durationMs: Int?,
+        sentenceId: String?,
+        sequenceId: String?,
+        definite: Bool?,
+        lines: [CaptionLine]
+    ) {
+        self.roomId = roomId
+        self.timestampMs = timestampMs
+        self.durationMs = durationMs
+        self.sentenceId = sentenceId
+        self.sequenceId = sequenceId
+        self.definite = definite
+        self.lines = lines
+    }
+}
+
+public struct BarrageEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let messageType: Int?
+    public let durationMs: Int?
+    public let displayText: String?
+    public let userId: String?
+    public let uniqueId: String?
+    public let nickname: String?
+
+    public init(
+        roomId: String?,
+        messageType: Int?,
+        durationMs: Int?,
+        displayText: String?,
+        userId: String?,
+        uniqueId: String?,
+        nickname: String?
+    ) {
+        self.roomId = roomId
+        self.messageType = messageType
+        self.durationMs = durationMs
+        self.displayText = displayText
+        self.userId = userId
+        self.uniqueId = uniqueId
+        self.nickname = nickname
+    }
+}
+
+public struct LinkMicFanTicketUser: Sendable, Equatable, Hashable {
+    public let userId: String?
+    public let fanTicket: Int?
+    public let matchTotalScore: Int?
+    public let matchRank: Int?
+
+    public init(userId: String?, fanTicket: Int?, matchTotalScore: Int?, matchRank: Int?) {
+        self.userId = userId
+        self.fanTicket = fanTicket
+        self.matchTotalScore = matchTotalScore
+        self.matchRank = matchRank
+    }
+}
+
+public struct LinkMicFanTicketEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let totalLinkMicFanTicket: Int?
+    public let matchId: String?
+    public let eventTime: Int?
+    public let playId: String?
+    public let playScene: Int?
+    public let users: [LinkMicFanTicketUser]
+
+    public init(
+        roomId: String?,
+        totalLinkMicFanTicket: Int?,
+        matchId: String?,
+        eventTime: Int?,
+        playId: String?,
+        playScene: Int?,
+        users: [LinkMicFanTicketUser]
+    ) {
+        self.roomId = roomId
+        self.totalLinkMicFanTicket = totalLinkMicFanTicket
+        self.matchId = matchId
+        self.eventTime = eventTime
+        self.playId = playId
+        self.playScene = playScene
+        self.users = users
     }
 }
 
