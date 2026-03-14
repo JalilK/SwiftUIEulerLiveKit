@@ -18,13 +18,22 @@ private let schemaVerifiedEventNames: Set<String> = [
     "like"
 ]
 
-private let schemaDiscoveryTargetEventNames: Set<String> = [
-    "gift",
-    "room_message"
-]
+private let schemaDiscoveryTargetEventNames: Set<String> = []
 
 private func shouldLogForSchemaDiscovery(_ record: EulerDebugEventRecord) -> Bool {
-    schemaDiscoveryTargetEventNames.contains(record.eventName)
+    if schemaDiscoveryTargetEventNames.contains(record.eventName) {
+        return true
+    }
+
+    if record.decodedTypedEvent == nil {
+        return true
+    }
+
+    if case .unknown = record.decodedTypedEvent {
+        return true
+    }
+
+    return false
 }
 
 @MainActor
