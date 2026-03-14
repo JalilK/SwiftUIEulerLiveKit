@@ -58,8 +58,7 @@ client.onStatusChange = { status in
 }
 
 client.onEventRecord = { record in
-    print(record.eventName)
-    print(record.rawPayload)
+    EulerConsolePayloadPrinter.printLogBlock(for: record)
 }
 
 Task {
