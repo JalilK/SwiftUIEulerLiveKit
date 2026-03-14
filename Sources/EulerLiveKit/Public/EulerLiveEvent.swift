@@ -11,6 +11,9 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
     case roomUser(RoomUserEvent)
     case liveIntro(LiveIntroEvent)
     case roomMessage(RoomMessageEvent)
+    case caption(CaptionEvent)
+    case barrage(BarrageEvent)
+    case linkMicFanTicket(LinkMicFanTicketEvent)
     case workerInfo(WorkerInfoEvent)
     case transportConnect(TransportConnectEvent)
     case unknown(eventName: String)
@@ -37,6 +40,12 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
             return "live_intro"
         case .roomMessage:
             return "room_message"
+        case .caption:
+            return "caption_message"
+        case .barrage:
+            return "barrage"
+        case .linkMicFanTicket:
+            return "link_mic_fan_ticket_method"
         case .workerInfo:
             return "worker_info"
         case .transportConnect:
@@ -53,9 +62,9 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
         case .member(let event):
             return "member user=\(event.uniqueId ?? event.nickname ?? "unknown") viewers=\(event.viewerCount.map(String.init) ?? "nil")"
         case .gift(let event):
-            return "gift name=\(event.giftName ?? "unknown") user=\(event.uniqueId ?? event.nickname ?? "unknown")"
+            return "gift name=\(event.giftName ?? "unknown") user=\(event.uniqueId ?? event.nickname ?? "unknown") repeat=\(event.repeatCount.map(String.init) ?? "nil")"
         case .like(let event):
-            return "like count=\(event.likeCount.map(String.init) ?? "nil") user=\(event.uniqueId ?? event.nickname ?? "unknown")"
+            return "like count=\(event.likeCount.map(String.init) ?? "nil") total=\(event.totalLikeCount.map(String.init) ?? "nil") user=\(event.uniqueId ?? event.nickname ?? "unknown")"
         case .comment(let event):
             return "chat user=\(event.uniqueId ?? event.nickname ?? "unknown") text=\(event.comment ?? "")"
         case .follow(let event):
@@ -68,6 +77,12 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
             return "liveIntro host=\(event.hostNickname ?? event.hostUniqueId ?? "unknown")"
         case .roomMessage(let event):
             return "roomMessage scene=\(event.scene.map(String.init) ?? "nil") text=\(event.displayText ?? event.content ?? "")"
+        case .caption(let event):
+            return "caption lines=\(event.lines.count) text=\(event.lines.compactMap { $0.content }.joined(separator: " | "))"
+        case .barrage(let event):
+            return "barrage user=\(event.uniqueId ?? event.nickname ?? "unknown") text=\(event.displayText ?? "")"
+        case .linkMicFanTicket(let event):
+            return "linkMicFanTicket total=\(event.totalLinkMicFanTicket.map(String.init) ?? "nil") users=\(event.users.count)"
         case .workerInfo(let event):
             return "workerInfo schema=\(event.schemaVersion ?? "nil") socket=\(event.webSocketId ?? "nil")"
         case .transportConnect(let event):
