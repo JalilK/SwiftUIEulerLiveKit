@@ -241,7 +241,7 @@ public enum EulerEventDecoder {
             return "social_repost"
         case "linkmicbattle", "link_mic_battle", "webcastlinkmicbattle":
             return "link_mic_battle"
-        case "linkmicbattletaskmessage", "link_mic_battle_task", "webcastlinkmicbattletaskmessage", "webcastlinkmicbattletaskmessage":
+        case "linkmicbattletaskmessage", "link_mic_battle_task", "webcastlinkmicbattletaskmessage":
             return "link_mic_battle_task"
         case "unauthorizedmembermessage", "unauthorized_member", "webcastunauthorizedmembermessage":
             return "unauthorized_member"

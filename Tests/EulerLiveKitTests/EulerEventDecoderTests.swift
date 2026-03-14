@@ -156,7 +156,7 @@ struct EulerEventDecoderTests {
 
     @Test
     func decodesObservedSocialRepostEnvelope() {
-        let payload = #"{\"messages\":[{\"type\":\"WebcastSocialMessage\",\"data\":{\"action\":\"4\",\"shareType\":\"0\",\"shareCount\":0,\"common\":{\"method\":\"WebcastSocialMessage\",\"roomId\":\"7617210650510592789\",\"displayText\":{\"defaultPattern\":\"{0:user} reposted\"}},\"user\":{\"userId\":\"7364988828970812462\",\"uniqueId\":\"confidente11\",\"nickname\":\"confidente🖤\"}}}],\"timestamp\":1773524789464}"#
+        let payload = #"{"messages":[{"type":"WebcastSocialMessage","data":{"action":"4","shareType":"0","shareCount":0,"common":{"method":"WebcastSocialMessage","roomId":"7617210650510592789","displayText":{"defaultPattern":"{0:user} reposted"}},"user":{"userId":"7364988828970812462","uniqueId":"confidente11","nickname":"confidente🖤"}}}],"timestamp":1773524789464}"#
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "social_repost")
@@ -179,7 +179,7 @@ struct EulerEventDecoderTests {
 
     @Test
     func decodesObservedLinkMicBattleEnvelope() {
-        let payload = #"{\"messages\":[{\"type\":\"WebcastLinkMicBattle\",\"data\":{\"battleSetting\":{\"startTimeMs\":\"1773524944259\",\"status\":1,\"channelId\":\"7617229194094742288\",\"inviteType\":1,\"endTimeMs\":\"0\",\"battleId\":\"7617231616074844945\",\"duration\":301,\"battleType\":1},\"battleResult\":{},\"battleId\":\"7617231616074844945\",\"anchorInfo\":{\"7233690436392403974\":{\"user\":{\"nickName\":\"👑DON.SG👑\",\"userId\":\"7233690436392403974\",\"displayId\":\"don.prof.sg\"}},\"7005525148082390022\":{\"user\":{\"nickName\":\"PrettyBoyAli24\",\"userId\":\"7005525148082390022\",\"displayId\":\"prettyboyali24\"}}},\"action\":4,\"actionByUserId\":\"7233690436392403974\",\"battleCombos\":{\"7233690436392403974\":{\"comboCount\":\"0\"},\"7005525148082390022\":{\"comboCount\":\"8\"}},\"common\":{\"method\":\"WebcastLinkMicBattle\",\"roomId\":\"7617210650510592789\"}}}],\"timestamp\":1773524944867}"#
+        let payload = #"{"messages":[{"type":"WebcastLinkMicBattle","data":{"battleSetting":{"startTimeMs":"1773524944259","status":1,"channelId":"7617229194094742288","inviteType":1,"endTimeMs":"0","battleId":"7617231616074844945","duration":301,"battleType":1},"battleResult":{},"battleId":"7617231616074844945","anchorInfo":{"7233690436392403974":{"user":{"nickName":"👑DON.SG👑","userId":"7233690436392403974","displayId":"don.prof.sg"}},"7005525148082390022":{"user":{"nickName":"PrettyBoyAli24","userId":"7005525148082390022","displayId":"prettyboyali24"}}},"action":4,"actionByUserId":"7233690436392403974","battleCombos":{"7233690436392403974":{"comboCount":"0"},"7005525148082390022":{"comboCount":"8"}},"common":{"method":"WebcastLinkMicBattle","roomId":"7617210650510592789"}}}],"timestamp":1773524944867}"#
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "link_mic_battle")
@@ -207,7 +207,7 @@ struct EulerEventDecoderTests {
 
     @Test
     func decodesObservedLinkMicBattleTaskLifecycleEnvelope() {
-        let payload = #"{\"messages\":[{\"type\":\"WebcastLinkmicBattleTaskMessage\",\"data\":{\"common\":{\"method\":\"WebcastLinkmicBattleTaskMessage\",\"roomId\":\"7617210650510592789\"},\"battleTaskMessageType\":3,\"battleId\":\"7617235158249343765\",\"rewardSettle\":{\"rewardSettlePrompt\":{\"promptElements\":[{\"promptFieldValue\":\"64365\",\"promptFieldKey\":\"sum\"}]},\"status\":0}}}],\"timestamp\":1773525941918}"#
+        let payload = #"{"messages":[{"type":"WebcastLinkmicBattleTaskMessage","data":{"common":{"method":"WebcastLinkmicBattleTaskMessage","roomId":"7617210650510592789"},"battleTaskMessageType":3,"battleId":"7617235158249343765","rewardSettle":{"rewardSettlePrompt":{"promptElements":[{"promptFieldValue":"64365","promptFieldKey":"sum"}]},"status":0}}}],"timestamp":1773525941918}"#
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "link_mic_battle_task")
@@ -227,7 +227,7 @@ struct EulerEventDecoderTests {
 
     @Test
     func decodesObservedUnauthorizedMemberEnvelope() {
-        let payload = #"{\"messages\":[{\"type\":\"WebcastUnauthorizedMemberMessage\",\"data\":{\"common\":{\"method\":\"WebcastUnauthorizedMemberMessage\",\"roomId\":\"7617210650510592789\"},\"nickName\":\"296230\",\"enterText\":{\"defaultPattern\":\"{0:user} joined\"},\"action\":1}}],\"timestamp\":1773524814848}"#
+        let payload = #"{"messages":[{"type":"WebcastUnauthorizedMemberMessage","data":{"common":{"method":"WebcastUnauthorizedMemberMessage","roomId":"7617210650510592789"},"nickName":"296230","enterText":{"defaultPattern":"{0:user} joined"},"action":1}}],"timestamp":1773524814848}"#
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "unauthorized_member")
@@ -246,7 +246,7 @@ struct EulerEventDecoderTests {
 
     @Test
     func decodesObservedModerationDeleteEnvelope() {
-        let payload = #"{\"messages\":[{\"type\":\"WebcastImDeleteMessage\",\"data\":{\"deleteUserIdsList\":[\"6716621494014804998\"],\"deleteMsgIdsList\":[],\"common\":{\"method\":\"WebcastImDeleteMessage\",\"roomId\":\"7617210650510592789\"}}}],\"timestamp\":1773524829837}"#
+        let payload = #"{"messages":[{"type":"WebcastImDeleteMessage","data":{"deleteUserIdsList":["6716621494014804998"],"deleteMsgIdsList":[],"common":{"method":"WebcastImDeleteMessage","roomId":"7617210650510592789"}}}],"timestamp":1773524829837}"#
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "moderation_delete")
@@ -264,7 +264,7 @@ struct EulerEventDecoderTests {
 
     @Test
     func decodesObservedLinkMicBattlePunishFinishEnvelope() {
-        let payload = #"{\"messages\":[{\"type\":\"WebcastLinkMicBattlePunishFinish\",\"data\":{\"common\":{\"method\":\"WebcastLinkMicBattlePunishFinish\",\"roomId\":\"7617210650510592789\"},\"opUid\":\"7005525148082390022\",\"battleId\":\"7617231616074844945\",\"reason\":1,\"battleSettings\":{\"status\":4,\"endTimeMs\":\"1773525248502\"},\"channelId\":\"7617229194094742288\"}}],\"timestamp\":1773525377639}"#
+        let payload = #"{"messages":[{"type":"WebcastLinkMicBattlePunishFinish","data":{"common":{"method":"WebcastLinkMicBattlePunishFinish","roomId":"7617210650510592789"},"opUid":"7005525148082390022","battleId":"7617231616074844945","reason":1,"battleSettings":{"status":4,"endTimeMs":"1773525248502"},"channelId":"7617229194094742288"}}],"timestamp":1773525377639}"#
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "link_mic_battle_punish_finish")
@@ -286,7 +286,7 @@ struct EulerEventDecoderTests {
 
     @Test
     func decodesObservedLinkMessageEnvelope() {
-        let payload = #"{\"messages\":[{\"type\":\"WebcastLinkMessage\",\"data\":{\"common\":{\"method\":\"WebcastLinkMessage\",\"roomId\":\"7617210650510592789\"},\"extra\":\"\",\"transferExtra\":\"\",\"Scene\":2,\"LinkerId\":\"7617234292992740114\",\"expireTimestamp\":\"0\",\"MessageType\":2}}],\"timestamp\":1773525593652}"#
+        let payload = #"{"messages":[{"type":"WebcastLinkMessage","data":{"common":{"method":"WebcastLinkMessage","roomId":"7617210650510592789"},"extra":"","transferExtra":"","Scene":2,"LinkerId":"7617234292992740114","expireTimestamp":"0","MessageType":2}}],"timestamp":1773525593652}"#
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "link_message")
