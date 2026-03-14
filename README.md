@@ -82,23 +82,56 @@ SwiftUIEulerLiveKit now models the following live payload families as concrete n
 
 ### Stable models
 
-- `room_info`
-- `member`
-- `gift`
-- `like`
-- `chat`
-- `follow`
-- `share`
-- `room_user`
-- `live_intro`
-- `room_message`
-- `caption_message`
-- `barrage`
-- `link_mic_fan_ticket_method`
-- `link_mic_armies`
+- `room_info`  
+  Creator and room metadata announced when a live connection becomes usable.
+
+- `member`  
+  A viewer entered the room.
+
+- `gift`  
+  A viewer sent a gift. Supports streaks, combos, and gift identity.
+
+- `like`  
+  A viewer liked the live.
+
+- `chat`  
+  A viewer sent a chat message.
+
+- `follow`  
+  A viewer followed the creator.
+
+- `share`  
+  A viewer shared the live.
+
+- `room_user`  
+  Room-level audience and ranking updates.
+
+- `live_intro`  
+  Metadata describing the current live session and host.
+
+- `room_message`  
+  System notices such as filtered comment banners.
+
+- `caption_message`  
+  Speech-to-text caption lines generated during the stream.
+
+- `barrage`  
+  Animated overlay messages such as badge banners and entrance effects.
+
+- `link_mic_fan_ticket_method`  
+  Battle fan-ticket score updates.
+
+- `link_mic_armies`  
+  Battle scoreboard snapshots.
 
 ### Active schema-discovery target
 
-- `link_layer`
+- `link_layer`  
+  Battle / co-host session plumbing still under discovery.
 
-The example app focuses console logging on unknown payloads to accelerate schema discovery.
+## Schema discovery workflow
+
+The example app captures live payloads and only logs events that are not yet modeled.
+Once a payload family is verified through live capture, it is added to the public API and removed from targeted logging.
+
+This keeps schema discovery focused on unknown payloads.
