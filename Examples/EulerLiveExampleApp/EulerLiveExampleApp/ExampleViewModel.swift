@@ -9,6 +9,10 @@ private func shouldLogForSchemaDiscovery(_ record: EulerDebugEventRecord) -> Boo
         return true
     }
 
+    if record.decodeOutcome == .decodedWithPartialData {
+        return true
+    }
+
     if record.decodedTypedEvent == nil {
         return true
     }
@@ -27,6 +31,7 @@ final class ExampleViewModel: ObservableObject {
     private static let maxVisibleRecords = 120
 
     private let userDefaults = UserDefaults.standard
+    private let unknownPayloadSink = ExampleViewModel.makeUnknownPayloadSink()
 
     @Published var creatorInput: String
     @Published private(set) var connectedUniqueId: String = ""
@@ -100,9 +105,13 @@ final class ExampleViewModel: ObservableObject {
 
         client.onEventRecord = { [weak self] record in
             let fannedOutRecords = EulerEventDecoder.decodeRecords(from: record.rawPayload, receivedAt: record.receivedAt)
+            let sink = self?.unknownPayloadSink
 
             for item in fannedOutRecords where shouldLogForSchemaDiscovery(item) {
                 EulerConsolePayloadPrinter.printLogBlock(for: item)
+                Task {
+                    await sink?.captureIfNeeded(record: item)
+                }
             }
 
             Task { @MainActor in
@@ -160,6 +169,18 @@ final class ExampleViewModel: ObservableObject {
 
     private func refreshCoverageNow() {
         coverage = EulerEventDecoder.documentedEventCoverage(from: records)
+    }
+
+    private static func makeUnknownPayloadSink() -> EulerUnknownPayloadSink? {
+        guard let applicationSupportDirectory = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+
+        let captureDirectory = applicationSupportDirectory
+            .appendingPathComponent("SwiftUIEulerLiveKit", isDirectory: true)
+            .appendingPathComponent("CapturedPayloads", isDirectory: true)
+
+        return EulerUnknownPayloadSink(baseDirectoryURL: captureDirectory)
     }
 
     private static func presentableStatus(_ status: EulerConnectionStatus) -> (headline: String, detail: String, technicalDetail: String?) {

@@ -106,3 +106,23 @@ SwiftUIEulerLiveKit now models the following live payload families as concrete n
 The example app now has first-pass modeling for goal updates, link mic method summaries, in-room banner ranking payloads, and link-layer participant graph updates.
 
 Unknown logging can stay focused on payloads that still have no reliable public model.
+
+## Automatic unknown payload sink and schema dedupe
+
+The example app now persists unknown and partial-decode payloads to an automatic capture sink.
+
+Captured payloads are written outside the repo in the app support directory under a deterministic event-family folder structure.
+
+Each event family also gets a `manifest.json` file that stores
+
+- schema fingerprint
+- schema field paths
+- first seen time
+- last seen time
+- seen count
+- representative payload file
+- observed primary message types
+
+Deduping is schema-based rather than value-based, so repeated payloads with the same field shape collapse into a single manifest entry while the seen count increases.
+
+This keeps schema discovery focused on genuinely new shapes instead of drowning in duplicate live traffic.
