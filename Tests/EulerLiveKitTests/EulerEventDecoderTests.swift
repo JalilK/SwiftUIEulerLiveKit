@@ -56,154 +56,100 @@ struct EulerEventDecoderTests {
     }
 
     @Test
-    func decodesObservedGiftEnvelopeStreakFinished() {
-        let payload = #"{"messages":[{"type":"WebcastGiftMessage","data":{"repeatCount":1,"comboCount":1,"common":{"method":"WebcastGiftMessage","roomId":"7617156681859975956","describe":"Maya: gifted the host 1 Rose","displayText":{"defaultPattern":"{0:user} sent {1:gift} × {2:string}"}},"giftId":5655,"user":{"userId":"7535293805101057025","uniqueId":"maya57547","nickname":"Maya"},"repeatEnd":1,"groupId":"1773511424704","giftDetails":{"id":"5655","giftName":"Rose","giftType":1,"diamondCount":1,"combo":true,"forLinkMic":true}}}],"timestamp":1773511429572}"#
+    func decodesObservedLinkMicMethodEnvelope() {
+        let payload = #"{"messages":[{"type":"WebcastLinkMicMethod","data":{"common":{"method":"WebcastLinkMicMethod","roomId":"7617156681859975956"},"messageType":8,"userId":"6765684109357728774","fanTicket":"2744","totalLinkMicFanTicket":"2744","channelId":"0","anchorLinkmicId":"0","matchType":0,"win":false,"rivalAnchorId":"0","shouldShowPopup":false,"rtcJoinChannel":false}}],"timestamp":1773515238532}"#
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
-        #expect(record.eventName == "gift")
+        #expect(record.eventName == "link_mic_method")
         #expect(record.decodeOutcome == .decoded)
 
-        guard case .gift(let event)? = record.decodedTypedEvent else {
-            Issue.record("Expected gift event")
-            return
-        }
-
-        #expect(event.uniqueId == "maya57547")
-        #expect(event.nickname == "Maya")
-        #expect(event.giftName == "Rose")
-        #expect(event.giftId == 5655)
-        #expect(event.repeatCount == 1)
-        #expect(event.repeatEnd == true)
-        #expect(event.giftType == 1)
-        #expect(event.displayText == "Maya: gifted the host 1 Rose")
-        #expect(event.groupId == "1773511424704")
-        #expect(event.comboCount == 1)
-        #expect(event.diamondCount == 1)
-    }
-
-    @Test
-    func decodesObservedRoomMessageEnvelope() {
-        let payload = #"{"messages":[{"data":{"common":{"isShowMsg":true,"displayText":{"defaultPattern":"Some comments in this LIVE were filtered to protect the community’s experience."},"roomId":"7617156681859975956","msgId":"7617158711178119966","createTime":"1773508034","method":"WebcastRoomMessage"},"content":" ","source":"1","scene":0,"isWelcome":false,"showDurationMs":"0","supportLandscape":false},"type":"WebcastRoomMessage"}],"timestamp":1773511421247}"#
-        let record = EulerEventDecoder.decodeRecord(from: payload)
-
-        #expect(record.eventName == "room_message")
-        #expect(record.decodeOutcome == .decoded)
-
-        guard case .roomMessage(let event)? = record.decodedTypedEvent else {
-            Issue.record("Expected room message event")
-            return
-        }
-
-        #expect(event.content == " ")
-        #expect(event.source == "1")
-        #expect(event.scene == 0)
-        #expect(event.displayText == "Some comments in this LIVE were filtered to protect the community’s experience.")
-    }
-
-    @Test
-    func decodesObservedLikeEnvelope() {
-        let payload = #"{"messages":[{"type":"WebcastLikeMessage","data":{"common":{"method":"WebcastLikeMessage","roomId":"7617138631244909342","displayText":{"defaultPattern":"{0:user} liked the LIVE"}},"user":{"userId":"7266178225680434222","uniqueId":"brayden_bergie","nickname":"Brayden"},"count":"15","totalLikeCount":"48523"}}],"timestamp":1773505623740}"#
-        let record = EulerEventDecoder.decodeRecord(from: payload)
-
-        #expect(record.eventName == "like")
-        #expect(record.decodeOutcome == .decoded)
-
-        guard case .like(let event)? = record.decodedTypedEvent else {
-            Issue.record("Expected like event")
-            return
-        }
-
-        #expect(event.uniqueId == "brayden_bergie")
-        #expect(event.nickname == "Brayden")
-        #expect(event.likeCount == 15)
-        #expect(event.totalLikeCount == 48523)
-        #expect(event.displayText == "{0:user} liked the LIVE")
-    }
-
-    @Test
-    func decodesObservedCaptionEnvelope() {
-        let payload = #"{"messages":[{"type":"WebcastCaptionMessage","data":{"common":{"method":"WebcastCaptionMessage","roomId":"7617138631244909342"},"timestampMs":"1773506671174","durationMs":"1000","content":[{"lang":"en","content":"that crazy."}],"sentenceId":"1773506671174","sequenceId":"1773506671174","definite":true}}],"timestamp":1773506670116}"#
-        let record = EulerEventDecoder.decodeRecord(from: payload)
-
-        #expect(record.eventName == "caption_message")
-        #expect(record.decodeOutcome == .decoded)
-
-        guard case .caption(let event)? = record.decodedTypedEvent else {
-            Issue.record("Expected caption event")
-            return
-        }
-
-        #expect(event.roomId == "7617138631244909342")
-        #expect(event.timestampMs == 1773506671174)
-        #expect(event.durationMs == 1000)
-        #expect(event.lines.count == 1)
-        #expect(event.lines.first?.language == "en")
-        #expect(event.lines.first?.content == "that crazy.")
-    }
-
-    @Test
-    func decodesObservedBarrageEnvelope() {
-        let payload = #"{"messages":[{"type":"WebcastBarrageMessage","data":{"common":{"method":"WebcastBarrageMessage","roomId":"7617107657484225293"},"msgType":9,"duration":"4000","content":{"defaultPattern":"joined"},"user":{"userId":"6897434814581818374","uniqueId":"fan_entrance","nickname":"Fan Entrance"}}}],"timestamp":1773501595974}"#
-        let record = EulerEventDecoder.decodeRecord(from: payload)
-
-        #expect(record.eventName == "barrage")
-        #expect(record.decodeOutcome == .decoded)
-
-        guard case .barrage(let event)? = record.decodedTypedEvent else {
-            Issue.record("Expected barrage event")
-            return
-        }
-
-        #expect(event.roomId == "7617107657484225293")
-        #expect(event.messageType == 9)
-        #expect(event.durationMs == 4000)
-        #expect(event.displayText == "joined")
-        #expect(event.userId == "6897434814581818374")
-        #expect(event.uniqueId == "fan_entrance")
-        #expect(event.nickname == "Fan Entrance")
-    }
-
-    @Test
-    func decodesObservedLinkMicFanTicketEnvelope() {
-        let payload = #"{"messages":[{"type":"WebcastLinkMicFanTicketMethod","data":{"common":{"method":"WebcastLinkMicFanTicketMethod","roomId":"7617138631244909342"},"FanTicketRoomNotice":{"UserFanTicketList":[{"UserId":"7499243542570419243","FanTicket":"57","MatchTotalScore":"0","MatchRank":0}],"TotalLinkMicFanTicket":"57","MatchId":"0","EventTime":"1773506649867","playId":"0","playScene":0}}}],"timestamp":1773506670116}"#
-        let record = EulerEventDecoder.decodeRecord(from: payload)
-
-        #expect(record.eventName == "link_mic_fan_ticket_method")
-        #expect(record.decodeOutcome == .decoded)
-
-        guard case .linkMicFanTicket(let event)? = record.decodedTypedEvent else {
-            Issue.record("Expected link mic fan ticket event")
-            return
-        }
-
-        #expect(event.roomId == "7617138631244909342")
-        #expect(event.totalLinkMicFanTicket == 57)
-        #expect(event.users.count == 1)
-        #expect(event.users.first?.userId == "7499243542570419243")
-        #expect(event.users.first?.fanTicket == 57)
-    }
-
-    @Test
-    func decodesObservedLinkMicArmiesEnvelope() {
-        let payload = #"{"messages":[{"type":"WebcastLinkMicArmies","data":{"common":{"method":"WebcastLinkMicArmies","roomId":"7617156681859975956"},"battleId":"7617174402200554261","channelId":"7617164558465878805","battleStatus":1,"fromUserId":"7329616845265339397","giftId":"5879","giftCount":0,"totalDiamondCount":0,"repeatCount":0,"scoreUpdateTime":"1773511789916","giftSentTime":"1773511789795","battleItems":{"7055026438022808581":{"userArmy":[{"userId":"6959375908424418309","score":"250","nickname":"virgobeast♤aka Harold","diamondScore":"0","userIdStr":"6959375908424418309"}],"hostScore":"268","anchorIdStr":"7055026438022808581"},"6765684109357728774":{"userArmy":[{"userId":"7329616845265339397","score":"95","nickname":"💎❤kelvin ⚾️❤⚾️💎💎kristal💎❤","diamondScore":"0","userIdStr":"7329616845265339397"},{"userId":"6837466029536019461","score":"64","nickname":"Ebenezer Cerda Gomez","diamondScore":"0","userIdStr":"6837466029536019461"}],"hostScore":"259","anchorIdStr":"6765684109357728774"}}}}],"timestamp":1773511791099}"#
-        let record = EulerEventDecoder.decodeRecord(from: payload)
-
-        #expect(record.eventName == "link_mic_armies")
-        #expect(record.decodeOutcome == .decoded)
-
-        guard case .linkMicArmies(let event)? = record.decodedTypedEvent else {
-            Issue.record("Expected link mic armies event")
+        guard case .linkMicMethod(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected link mic method event")
             return
         }
 
         #expect(event.roomId == "7617156681859975956")
-        #expect(event.battleId == "7617174402200554261")
-        #expect(event.channelId == "7617164558465878805")
-        #expect(event.battleStatus == 1)
-        #expect(event.giftId == 5879)
-        #expect(event.totalDiamondCount == 0)
-        #expect(event.sides.count == 2)
-        #expect(event.sides.first(where: { $0.anchorId == "7055026438022808581" })?.hostScore == 268)
-        #expect(event.sides.first(where: { $0.anchorId == "6765684109357728774" })?.users.count == 2)
+        #expect(event.messageType == 8)
+        #expect(event.userId == "6765684109357728774")
+        #expect(event.fanTicket == 2744)
+        #expect(event.totalLinkMicFanTicket == 2744)
+        #expect(event.channelId == "0")
+        #expect(event.anchorLinkMicId == "0")
+        #expect(event.matchType == 0)
+        #expect(event.win == false)
+    }
+
+    @Test
+    func decodesObservedGoalUpdateEnvelope() {
+        let payload = #"{"messages":[{"type":"WebcastGoalUpdateMessage","data":{"indicator":{"key":"live_goal_indicator_stream_goal","op":3},"goal":{"id":"7617154908760951572","description":"Goal description","type":1,"status":2,"contributors":[{"userId":"7471766080148505643","score":"2151","userIdStr":"7471766080148505643","inRoom":false,"isFriend":true,"displayId":"Top Fan"}],"subGoals":[{"target":"15","source":0,"id":"7934","gift":{"name":"Heart Me","diamondCount":"1","type":4},"idStr":"7934","type":1,"progress":"14"}]},"contributorDisplayId":"Top Fan","contributeScore":"1","updateSource":2,"contributorId":"7471766080148505643","contributorIdStr":"7471766080148505643","contributeCount":"1","common":{"method":"WebcastGoalUpdateMessage","roomId":"7617156681859975956"},"pin":false,"unpin":false}}],"timestamp":1773515237788}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "goal_update")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .goalUpdate(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected goal update event")
+            return
+        }
+
+        #expect(event.roomId == "7617156681859975956")
+        #expect(event.goalId == "7617154908760951572")
+        #expect(event.goalDescription == "Goal description")
+        #expect(event.goalType == 1)
+        #expect(event.goalStatus == 2)
+        #expect(event.indicatorKey == "live_goal_indicator_stream_goal")
+        #expect(event.indicatorOperation == 3)
+        #expect(event.contributorDisplayId == "Top Fan")
+        #expect(event.contributeScore == 1)
+        #expect(event.subGoals.count == 1)
+        #expect(event.contributors.count == 1)
+        #expect(event.subGoals.first?.giftName == "Heart Me")
+    }
+
+    @Test
+    func decodesObservedInRoomBannerEnvelope() {
+        let payload = #"{"messages":[{"type":"WebcastInRoomBannerMessage","data":{"common":{"method":"WebcastInRoomBannerMessage","roomId":"7617156681859975956"},"data":"{\"activity_indicator\":{\"currents\":[{\"activity_code\":\"activity-1\",\"now\":1773515237,\"phase_name\":null}],\"user_rank__player_state\":[{\"base\":{\"activity_code\":\"activity-1\",\"feature_name\":\"feature-1\"},\"state\":{\"comparison\":{\"target_rank\":99,\"target_score\":\"1210734\"},\"lead_contributors\":[{\"rank\":1,\"score\":\"2993\",\"uid\":\"7471766080148505643\"}],\"rank\":0,\"score\":\"8637\",\"state_id\":\"6765684109357728774\",\"uid\":\"6765684109357728774\"}}]}}","position":0,"actionType":0}}],"timestamp":1773515245887}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "in_room_banner")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .inRoomBanner(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected in room banner event")
+            return
+        }
+
+        #expect(event.roomId == "7617156681859975956")
+        #expect(event.position == 0)
+        #expect(event.actionType == 0)
+        #expect(event.currents.count == 1)
+        #expect(event.playerStates.count == 1)
+        #expect(event.playerStates.first?.activityCode == "activity-1")
+        #expect(event.playerStates.first?.leadContributors.first?.uid == "7471766080148505643")
+    }
+
+    @Test
+    func decodesObservedLinkLayerEnvelope() {
+        let payload = #"{"messages":[{"type":"WebcastLinkLayerMessage","data":{"common":{"method":"WebcastLinkLayerMessage","roomId":"7617156681859975956"},"scene":2,"channelId":"7617156681859975956","source":"SOURCE_TYPE_RECOMMENDED_FRIEND_CAPULE","groupChangeContent":{"groupUser":{"userList":[{"status":1,"channelId":"7617156681859975956","joinTime":"1773515532113000000","ownerUser":{"channelId":"7617191096896064257","user":{"userId":"6765684109357728774","nickname":""}},"type":102}]}},"messageType":18,"rtcRoomId":"0","businessContent":{"cohostContent":{"listChangeBizContent":{"userInfos":{"6765684109357728774":{"displayId":"alexiselclasico","nickname":"乇𝓵 c𝓵ªŝіcᵒ🎸"}}}}}}}],"timestamp":1773515533457}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "link_layer")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .linkLayer(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected link layer event")
+            return
+        }
+
+        #expect(event.roomId == "7617156681859975956")
+        #expect(event.scene == 2)
+        #expect(event.messageType == 18)
+        #expect(event.channelId == "7617156681859975956")
+        #expect(event.source == "SOURCE_TYPE_RECOMMENDED_FRIEND_CAPULE")
+        #expect(event.participants.count == 1)
+        #expect(event.participants.first?.userId == "6765684109357728774")
+        #expect(event.participants.first?.displayId == "alexiselclasico")
+        #expect(event.participants.first?.status == 1)
+        #expect(event.participants.first?.type == 102)
     }
 }

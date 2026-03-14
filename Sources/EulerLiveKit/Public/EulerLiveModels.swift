@@ -373,6 +373,299 @@ public struct LinkMicArmiesEvent: Sendable, Equatable, Hashable {
     }
 }
 
+public struct GoalContributor: Sendable, Equatable, Hashable {
+    public let userId: String?
+    public let userIdStr: String?
+    public let displayId: String?
+    public let score: Int?
+    public let inRoom: Bool?
+    public let isFriend: Bool?
+
+    public init(
+        userId: String?,
+        userIdStr: String?,
+        displayId: String?,
+        score: Int?,
+        inRoom: Bool?,
+        isFriend: Bool?
+    ) {
+        self.userId = userId
+        self.userIdStr = userIdStr
+        self.displayId = displayId
+        self.score = score
+        self.inRoom = inRoom
+        self.isFriend = isFriend
+    }
+}
+
+public struct GoalSubGoal: Sendable, Equatable, Hashable {
+    public let id: String?
+    public let idStr: String?
+    public let target: Int?
+    public let progress: Int?
+    public let source: Int?
+    public let type: Int?
+    public let giftName: String?
+    public let giftDiamondCount: Int?
+
+    public init(
+        id: String?,
+        idStr: String?,
+        target: Int?,
+        progress: Int?,
+        source: Int?,
+        type: Int?,
+        giftName: String?,
+        giftDiamondCount: Int?
+    ) {
+        self.id = id
+        self.idStr = idStr
+        self.target = target
+        self.progress = progress
+        self.source = source
+        self.type = type
+        self.giftName = giftName
+        self.giftDiamondCount = giftDiamondCount
+    }
+}
+
+public struct GoalUpdateEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let goalId: String?
+    public let goalDescription: String?
+    public let goalType: Int?
+    public let goalStatus: Int?
+    public let indicatorKey: String?
+    public let indicatorOperation: Int?
+    public let updateSource: Int?
+    public let contributorId: String?
+    public let contributorIdStr: String?
+    public let contributorDisplayId: String?
+    public let contributeScore: Int?
+    public let contributeCount: Int?
+    public let pin: Bool?
+    public let unpin: Bool?
+    public let subGoals: [GoalSubGoal]
+    public let contributors: [GoalContributor]
+
+    public init(
+        roomId: String?,
+        goalId: String?,
+        goalDescription: String?,
+        goalType: Int?,
+        goalStatus: Int?,
+        indicatorKey: String?,
+        indicatorOperation: Int?,
+        updateSource: Int?,
+        contributorId: String?,
+        contributorIdStr: String?,
+        contributorDisplayId: String?,
+        contributeScore: Int?,
+        contributeCount: Int?,
+        pin: Bool?,
+        unpin: Bool?,
+        subGoals: [GoalSubGoal],
+        contributors: [GoalContributor]
+    ) {
+        self.roomId = roomId
+        self.goalId = goalId
+        self.goalDescription = goalDescription
+        self.goalType = goalType
+        self.goalStatus = goalStatus
+        self.indicatorKey = indicatorKey
+        self.indicatorOperation = indicatorOperation
+        self.updateSource = updateSource
+        self.contributorId = contributorId
+        self.contributorIdStr = contributorIdStr
+        self.contributorDisplayId = contributorDisplayId
+        self.contributeScore = contributeScore
+        self.contributeCount = contributeCount
+        self.pin = pin
+        self.unpin = unpin
+        self.subGoals = subGoals
+        self.contributors = contributors
+    }
+}
+
+public struct LinkMicMethodEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let messageType: Int?
+    public let userId: String?
+    public let fanTicket: Int?
+    public let totalLinkMicFanTicket: Int?
+    public let channelId: String?
+    public let anchorLinkMicId: String?
+    public let rivalAnchorId: String?
+    public let matchType: Int?
+    public let win: Bool?
+    public let shouldShowPopup: Bool?
+    public let rtcJoinChannel: Bool?
+
+    public init(
+        roomId: String?,
+        messageType: Int?,
+        userId: String?,
+        fanTicket: Int?,
+        totalLinkMicFanTicket: Int?,
+        channelId: String?,
+        anchorLinkMicId: String?,
+        rivalAnchorId: String?,
+        matchType: Int?,
+        win: Bool?,
+        shouldShowPopup: Bool?,
+        rtcJoinChannel: Bool?
+    ) {
+        self.roomId = roomId
+        self.messageType = messageType
+        self.userId = userId
+        self.fanTicket = fanTicket
+        self.totalLinkMicFanTicket = totalLinkMicFanTicket
+        self.channelId = channelId
+        self.anchorLinkMicId = anchorLinkMicId
+        self.rivalAnchorId = rivalAnchorId
+        self.matchType = matchType
+        self.win = win
+        self.shouldShowPopup = shouldShowPopup
+        self.rtcJoinChannel = rtcJoinChannel
+    }
+}
+
+public struct InRoomBannerLeadContributor: Sendable, Equatable, Hashable {
+    public let rank: Int?
+    public let score: Int?
+    public let uid: String?
+
+    public init(rank: Int?, score: Int?, uid: String?) {
+        self.rank = rank
+        self.score = score
+        self.uid = uid
+    }
+}
+
+public struct InRoomBannerPlayerState: Sendable, Equatable, Hashable {
+    public let activityCode: String?
+    public let featureName: String?
+    public let rank: Int?
+    public let score: Int?
+    public let stateId: String?
+    public let uid: String?
+    public let targetRank: Int?
+    public let targetScore: Int?
+    public let leadContributors: [InRoomBannerLeadContributor]
+
+    public init(
+        activityCode: String?,
+        featureName: String?,
+        rank: Int?,
+        score: Int?,
+        stateId: String?,
+        uid: String?,
+        targetRank: Int?,
+        targetScore: Int?,
+        leadContributors: [InRoomBannerLeadContributor]
+    ) {
+        self.activityCode = activityCode
+        self.featureName = featureName
+        self.rank = rank
+        self.score = score
+        self.stateId = stateId
+        self.uid = uid
+        self.targetRank = targetRank
+        self.targetScore = targetScore
+        self.leadContributors = leadContributors
+    }
+}
+
+public struct InRoomBannerCurrent: Sendable, Equatable, Hashable {
+    public let activityCode: String?
+    public let now: Int?
+    public let phaseName: String?
+
+    public init(activityCode: String?, now: Int?, phaseName: String?) {
+        self.activityCode = activityCode
+        self.now = now
+        self.phaseName = phaseName
+    }
+}
+
+public struct InRoomBannerEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let position: Int?
+    public let actionType: Int?
+    public let currents: [InRoomBannerCurrent]
+    public let playerStates: [InRoomBannerPlayerState]
+
+    public init(
+        roomId: String?,
+        position: Int?,
+        actionType: Int?,
+        currents: [InRoomBannerCurrent],
+        playerStates: [InRoomBannerPlayerState]
+    ) {
+        self.roomId = roomId
+        self.position = position
+        self.actionType = actionType
+        self.currents = currents
+        self.playerStates = playerStates
+    }
+}
+
+public struct LinkLayerParticipant: Sendable, Equatable, Hashable {
+    public let channelId: String?
+    public let userId: String?
+    public let displayId: String?
+    public let nickname: String?
+    public let status: Int?
+    public let type: Int?
+    public let joinTime: String?
+
+    public init(
+        channelId: String?,
+        userId: String?,
+        displayId: String?,
+        nickname: String?,
+        status: Int?,
+        type: Int?,
+        joinTime: String?
+    ) {
+        self.channelId = channelId
+        self.userId = userId
+        self.displayId = displayId
+        self.nickname = nickname
+        self.status = status
+        self.type = type
+        self.joinTime = joinTime
+    }
+}
+
+public struct LinkLayerEvent: Sendable, Equatable, Hashable {
+    public let roomId: String?
+    public let scene: Int?
+    public let messageType: Int?
+    public let channelId: String?
+    public let source: String?
+    public let rtcRoomId: String?
+    public let participants: [LinkLayerParticipant]
+
+    public init(
+        roomId: String?,
+        scene: Int?,
+        messageType: Int?,
+        channelId: String?,
+        source: String?,
+        rtcRoomId: String?,
+        participants: [LinkLayerParticipant]
+    ) {
+        self.roomId = roomId
+        self.scene = scene
+        self.messageType = messageType
+        self.channelId = channelId
+        self.source = source
+        self.rtcRoomId = rtcRoomId
+        self.participants = participants
+    }
+}
+
 public struct WorkerInfoEvent: Sendable, Equatable, Hashable {
     public let webSocketId: String?
     public let schemaVersion: String?
@@ -412,6 +705,9 @@ public enum EulerDocumentedEventKind: String, CaseIterable, Sendable {
     case barrage = "barrage"
     case linkMicFanTicketMethod = "link_mic_fan_ticket_method"
     case linkMicArmies = "link_mic_armies"
+    case goalUpdate = "goal_update"
+    case linkMicMethod = "link_mic_method"
+    case inRoomBanner = "in_room_banner"
     case linkLayer = "link_layer"
 
     public var displayName: String {
@@ -434,6 +730,9 @@ public enum EulerDocumentedEventKind: String, CaseIterable, Sendable {
         case .barrage: return "Barrage"
         case .linkMicFanTicketMethod: return "LinkMic fan ticket"
         case .linkMicArmies: return "LinkMic armies"
+        case .goalUpdate: return "Goal update"
+        case .linkMicMethod: return "LinkMic method"
+        case .inRoomBanner: return "In-room banner"
         case .linkLayer: return "Link layer"
         }
     }
@@ -468,18 +767,19 @@ public enum EulerDocumentedEventKind: String, CaseIterable, Sendable {
             return "Battle and LinkMic fan-ticket score notice for the current battle session."
         case .linkMicArmies:
             return "Battle army scoreboard snapshot containing both sides, supporter ranks, and host scores."
+        case .goalUpdate:
+            return "Live goal progress, contributors, subgoals, and pin state."
+        case .linkMicMethod:
+            return "LinkMic score and match-state summary updates."
+        case .inRoomBanner:
+            return "In-room ranking and activity banner payloads."
         case .linkLayer:
-            return "Battle and co-host session plumbing. This still needs more live capture before public modeling is reliable."
+            return "Cohost and link-layer participant graph updates."
         }
     }
 
     public var implemented: Bool {
-        switch self {
-        case .linkLayer:
-            return false
-        default:
-            return true
-        }
+        true
     }
 }
 

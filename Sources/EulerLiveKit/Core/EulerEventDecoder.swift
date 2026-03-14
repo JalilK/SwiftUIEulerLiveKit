@@ -111,6 +111,18 @@ public enum EulerEventDecoder {
         case .linkMicArmies(let event):
             let hasStrongData = event.battleId != nil || !event.sides.isEmpty
             return hasStrongData ? .decoded : .decodedWithPartialData
+        case .goalUpdate(let event):
+            let hasStrongData = event.goalId != nil || event.goalDescription != nil || !event.subGoals.isEmpty || !event.contributors.isEmpty
+            return hasStrongData ? .decoded : .decodedWithPartialData
+        case .linkMicMethod(let event):
+            let hasStrongData = event.messageType != nil || event.totalLinkMicFanTicket != nil || event.userId != nil
+            return hasStrongData ? .decoded : .decodedWithPartialData
+        case .inRoomBanner(let event):
+            let hasStrongData = !event.currents.isEmpty || !event.playerStates.isEmpty
+            return hasStrongData ? .decoded : .decodedWithPartialData
+        case .linkLayer(let event):
+            let hasStrongData = event.scene != nil || event.messageType != nil || !event.participants.isEmpty
+            return hasStrongData ? .decoded : .decodedWithPartialData
         case .workerInfo(let event):
             let hasStrongData = event.webSocketId != nil || event.schemaVersion != nil
             return hasStrongData ? .decoded : .decodedWithPartialData
@@ -191,6 +203,12 @@ public enum EulerEventDecoder {
             return "link_mic_fan_ticket_method"
         case "linkmicarmies", "link_mic_armies", "webcastlinkmicarmies":
             return "link_mic_armies"
+        case "goalupdatemessage", "goal_update", "webcastgoalupdatemessage":
+            return "goal_update"
+        case "linkmicmethod", "link_mic_method", "webcastlinkmicmethod":
+            return "link_mic_method"
+        case "inroombannermessage", "in_room_banner", "webcastinroombannermessage":
+            return "in_room_banner"
         case "linklayermessage", "link_layer", "webcastlinklayermessage":
             return "link_layer"
         case "workerinfo", "worker_info":
@@ -360,6 +378,68 @@ public enum EulerEventDecoder {
                     sides: extractLinkMicArmySides(from: payload)
                 )
             )
+        case "goal_update":
+            return .goalUpdate(
+                GoalUpdateEvent(
+                    roomId: findString(in: payload, matchingAnyOf: ["roomId", "room_id"]),
+                    goalId: findString(in: payload, matchingAnyOf: ["id", "idStr"]),
+                    goalDescription: findString(in: payload, matchingAnyOf: ["description", "auditDescription"]),
+                    goalType: findInt(in: payload, matchingAnyOf: ["type"]),
+                    goalStatus: findInt(in: payload, matchingAnyOf: ["status"]),
+                    indicatorKey: findString(in: payload, matchingAnyOf: ["key"]),
+                    indicatorOperation: findInt(in: payload, matchingAnyOf: ["op"]),
+                    updateSource: findInt(in: payload, matchingAnyOf: ["updateSource"]),
+                    contributorId: findString(in: payload, matchingAnyOf: ["contributorId"]),
+                    contributorIdStr: findString(in: payload, matchingAnyOf: ["contributorIdStr"]),
+                    contributorDisplayId: findString(in: payload, matchingAnyOf: ["contributorDisplayId"]),
+                    contributeScore: findInt(in: payload, matchingAnyOf: ["contributeScore"]),
+                    contributeCount: findInt(in: payload, matchingAnyOf: ["contributeCount"]),
+                    pin: findBool(in: payload, matchingAnyOf: ["pin"]),
+                    unpin: findBool(in: payload, matchingAnyOf: ["unpin"]),
+                    subGoals: extractGoalSubGoals(from: payload),
+                    contributors: extractGoalContributors(from: payload)
+                )
+            )
+        case "link_mic_method":
+            return .linkMicMethod(
+                LinkMicMethodEvent(
+                    roomId: findString(in: payload, matchingAnyOf: ["roomId", "room_id"]),
+                    messageType: findInt(in: payload, matchingAnyOf: ["messageType"]),
+                    userId: findString(in: payload, matchingAnyOf: ["userId"]),
+                    fanTicket: findInt(in: payload, matchingAnyOf: ["fanTicket"]),
+                    totalLinkMicFanTicket: findInt(in: payload, matchingAnyOf: ["totalLinkMicFanTicket"]),
+                    channelId: findString(in: payload, matchingAnyOf: ["channelId"]),
+                    anchorLinkMicId: findString(in: payload, matchingAnyOf: ["anchorLinkmicId", "anchorLinkMicId"]),
+                    rivalAnchorId: findString(in: payload, matchingAnyOf: ["rivalAnchorId"]),
+                    matchType: findInt(in: payload, matchingAnyOf: ["matchType"]),
+                    win: findBool(in: payload, matchingAnyOf: ["win"]),
+                    shouldShowPopup: findBool(in: payload, matchingAnyOf: ["shouldShowPopup"]),
+                    rtcJoinChannel: findBool(in: payload, matchingAnyOf: ["rtcJoinChannel"])
+                )
+            )
+        case "in_room_banner":
+            let parsedBanner = parseEmbeddedJSONStringDictionary(from: payload, keys: ["data"])
+            return .inRoomBanner(
+                InRoomBannerEvent(
+                    roomId: findString(in: payload, matchingAnyOf: ["roomId", "room_id"]),
+                    position: findInt(in: payload, matchingAnyOf: ["position"]),
+                    actionType: findInt(in: payload, matchingAnyOf: ["actionType"]),
+                    currents: extractInRoomBannerCurrents(from: parsedBanner),
+                    playerStates: extractInRoomBannerPlayerStates(from: parsedBanner)
+                )
+            )
+        case "link_layer":
+            return .linkLayer(
+                LinkLayerEvent(
+                    roomId: findString(in: payload, matchingAnyOf: ["roomId", "room_id"]),
+                    scene: findInt(in: payload, matchingAnyOf: ["scene"]),
+                    messageType: findInt(in: payload, matchingAnyOf: ["messageType"]),
+                    channelId: findString(in: payload, matchingAnyOf: ["channelId"]),
+                    source: findString(in: payload, matchingAnyOf: ["source"]),
+                    rtcRoomId: findString(in: payload, matchingAnyOf: ["rtcRoomId"]),
+                    participants: extractLinkLayerParticipants(from: payload)
+                )
+            )
         case "worker_info":
             return .workerInfo(
                 WorkerInfoEvent(
@@ -400,6 +480,9 @@ public enum EulerEventDecoder {
         case .barrage: return record.eventName == "barrage" || primaryType == "webcastbarragemessage"
         case .linkMicFanTicketMethod: return record.eventName == "link_mic_fan_ticket_method" || primaryType == "webcastlinkmicfanticketmethod"
         case .linkMicArmies: return record.eventName == "link_mic_armies" || primaryType == "webcastlinkmicarmies"
+        case .goalUpdate: return record.eventName == "goal_update" || primaryType == "webcastgoalupdatemessage"
+        case .linkMicMethod: return record.eventName == "link_mic_method" || primaryType == "webcastlinkmicmethod"
+        case .inRoomBanner: return record.eventName == "in_room_banner" || primaryType == "webcastinroombannermessage"
         case .linkLayer: return record.eventName == "link_layer" || primaryType == "webcastlinklayermessage"
         }
     }
@@ -469,6 +552,137 @@ public enum EulerEventDecoder {
             return LinkMicArmySide(anchorId: anchorId, hostScore: hostScore, users: users)
         }
         .sorted { $0.anchorId < $1.anchorId }
+    }
+
+    private static func extractGoalContributors(from payload: [String: Any]) -> [GoalContributor] {
+        guard let contributors = findArray(in: payload, matchingAnyOf: ["contributors"]) else { return [] }
+
+        return contributors.compactMap { item in
+            guard let object = item as? [String: Any] else { return nil }
+            return GoalContributor(
+                userId: string(fromAny: object["userId"]),
+                userIdStr: object["userIdStr"] as? String,
+                displayId: object["displayId"] as? String,
+                score: int(fromAny: object["score"]),
+                inRoom: bool(fromAny: object["inRoom"]),
+                isFriend: bool(fromAny: object["isFriend"])
+            )
+        }
+    }
+
+    private static func extractGoalSubGoals(from payload: [String: Any]) -> [GoalSubGoal] {
+        guard let subGoals = findArray(in: payload, matchingAnyOf: ["subGoals"]) else { return [] }
+
+        return subGoals.compactMap { item in
+            guard let object = item as? [String: Any] else { return nil }
+            let gift = object["gift"] as? [String: Any]
+
+            return GoalSubGoal(
+                id: string(fromAny: object["id"]),
+                idStr: object["idStr"] as? String,
+                target: int(fromAny: object["target"]),
+                progress: int(fromAny: object["progress"]),
+                source: int(fromAny: object["source"]),
+                type: int(fromAny: object["type"]),
+                giftName: gift?["name"] as? String,
+                giftDiamondCount: int(fromAny: gift?["diamondCount"])
+            )
+        }
+    }
+
+    private static func parseEmbeddedJSONStringDictionary(from payload: [String: Any], keys: [String]) -> [String: Any] {
+        for key in keys {
+            if let text = findString(in: payload, matchingAnyOf: [key]),
+               let data = text.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                return json
+            }
+        }
+        return [:]
+    }
+
+    private static func extractInRoomBannerCurrents(from payload: [String: Any]) -> [InRoomBannerCurrent] {
+        guard let activityIndicator = payload["activity_indicator"] as? [String: Any],
+              let currents = activityIndicator["currents"] as? [[String: Any]] else {
+            return []
+        }
+
+        return currents.map { current in
+            InRoomBannerCurrent(
+                activityCode: current["activity_code"] as? String,
+                now: int(fromAny: current["now"]),
+                phaseName: current["phase_name"] as? String
+            )
+        }
+    }
+
+    private static func extractInRoomBannerPlayerStates(from payload: [String: Any]) -> [InRoomBannerPlayerState] {
+        guard let activityIndicator = payload["activity_indicator"] as? [String: Any],
+              let states = activityIndicator["user_rank__player_state"] as? [[String: Any]] else {
+            return []
+        }
+
+        return states.map { item in
+            let base = item["base"] as? [String: Any]
+            let state = item["state"] as? [String: Any]
+            let comparison = state?["comparison"] as? [String: Any]
+            let contributors = (state?["lead_contributors"] as? [[String: Any]] ?? []).map { contributor in
+                InRoomBannerLeadContributor(
+                    rank: int(fromAny: contributor["rank"]),
+                    score: int(fromAny: contributor["score"]),
+                    uid: contributor["uid"] as? String
+                )
+            }
+
+            return InRoomBannerPlayerState(
+                activityCode: base?["activity_code"] as? String,
+                featureName: base?["feature_name"] as? String,
+                rank: int(fromAny: state?["rank"]),
+                score: int(fromAny: state?["score"]),
+                stateId: state?["state_id"] as? String,
+                uid: state?["uid"] as? String,
+                targetRank: int(fromAny: comparison?["target_rank"]),
+                targetScore: int(fromAny: comparison?["target_score"]),
+                leadContributors: contributors
+            )
+        }
+    }
+
+    private static func extractLinkLayerParticipants(from payload: [String: Any]) -> [LinkLayerParticipant] {
+        let userInfoMap = extractLinkLayerUserInfos(from: payload)
+        guard let userList = findArray(in: payload, matchingAnyOf: ["userList"]) else { return [] }
+
+        return userList.compactMap { item in
+            guard let object = item as? [String: Any] else { return nil }
+
+            let ownerUser = object["ownerUser"] as? [String: Any]
+            let nestedUser = ownerUser?["user"] as? [String: Any]
+            let userId = string(fromAny: nestedUser?["userId"])
+            let info = userId.flatMap { userInfoMap[$0] }
+
+            return LinkLayerParticipant(
+                channelId: string(fromAny: object["channelId"]),
+                userId: userId,
+                displayId: info?["displayId"] as? String,
+                nickname: (info?["nickname"] as? String) ?? (nestedUser?["nickname"] as? String),
+                status: int(fromAny: object["status"]),
+                type: int(fromAny: object["type"]),
+                joinTime: string(fromAny: object["joinTime"])
+            )
+        }
+    }
+
+    private static func extractLinkLayerUserInfos(from payload: [String: Any]) -> [String: [String: Any]] {
+        guard let allInfos = findDictionary(in: payload, matchingAnyOf: ["userInfos"]) else { return [:] }
+        var result: [String: [String: Any]] = [:]
+
+        for (key, value) in allInfos {
+            if let object = value as? [String: Any] {
+                result[key] = object
+            }
+        }
+
+        return result
     }
 
     private static func findDictionary(in value: Any, matchingAnyOf keys: [String]) -> [String: Any]? {
@@ -570,19 +784,32 @@ public enum EulerEventDecoder {
         return nil
     }
 
+    private static func string(fromAny value: Any?) -> String? {
+        guard let value else { return nil }
+        if let string = value as? String, !string.isEmpty { return string }
+        if let number = value as? NSNumber { return number.stringValue }
+        return nil
+    }
+
+    private static func bool(fromAny value: Any?) -> Bool? {
+        guard let value else { return nil }
+        if let bool = value as? Bool { return bool }
+        if let number = value as? NSNumber { return number.boolValue }
+        if let string = value as? String {
+            switch string.lowercased() {
+            case "true", "1": return true
+            case "false", "0": return false
+            default: return nil
+            }
+        }
+        return nil
+    }
+
     private static func findBool(in value: Any, matchingAnyOf keys: [String]) -> Bool? {
         if let object = value as? [String: Any] {
             for key in keys {
-                if let direct = object[key] {
-                    if let bool = direct as? Bool { return bool }
-                    if let number = direct as? NSNumber { return number.boolValue }
-                    if let string = direct as? String {
-                        switch string.lowercased() {
-                        case "true", "1": return true
-                        case "false", "0": return false
-                        default: break
-                        }
-                    }
+                if let direct = object[key], let bool = bool(fromAny: direct) {
+                    return bool
                 }
             }
             for child in object.values {

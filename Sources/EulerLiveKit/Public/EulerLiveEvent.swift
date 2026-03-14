@@ -15,6 +15,10 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
     case barrage(BarrageEvent)
     case linkMicFanTicket(LinkMicFanTicketEvent)
     case linkMicArmies(LinkMicArmiesEvent)
+    case goalUpdate(GoalUpdateEvent)
+    case linkMicMethod(LinkMicMethodEvent)
+    case inRoomBanner(InRoomBannerEvent)
+    case linkLayer(LinkLayerEvent)
     case workerInfo(WorkerInfoEvent)
     case transportConnect(TransportConnectEvent)
     case unknown(eventName: String)
@@ -35,6 +39,10 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
         case .barrage: return "barrage"
         case .linkMicFanTicket: return "link_mic_fan_ticket_method"
         case .linkMicArmies: return "link_mic_armies"
+        case .goalUpdate: return "goal_update"
+        case .linkMicMethod: return "link_mic_method"
+        case .inRoomBanner: return "in_room_banner"
+        case .linkLayer: return "link_layer"
         case .workerInfo: return "worker_info"
         case .transportConnect: return "tiktok.connect"
         case .unknown(let eventName): return eventName
@@ -71,6 +79,14 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
             return "linkMicFanTicket total=\(event.totalLinkMicFanTicket.map(String.init) ?? "nil") users=\(event.users.count)"
         case .linkMicArmies(let event):
             return "linkMicArmies battle=\(event.battleId ?? "nil") sides=\(event.sides.count) diamonds=\(event.totalDiamondCount.map(String.init) ?? "nil")"
+        case .goalUpdate(let event):
+            return "goalUpdate goalId=\(event.goalId ?? "nil") contributor=\(event.contributorDisplayId ?? event.contributorId ?? "nil") score=\(event.contributeScore.map(String.init) ?? "nil") subGoals=\(event.subGoals.count)"
+        case .linkMicMethod(let event):
+            return "linkMicMethod type=\(event.messageType.map(String.init) ?? "nil") totalFanTicket=\(event.totalLinkMicFanTicket.map(String.init) ?? "nil") userId=\(event.userId ?? "nil")"
+        case .inRoomBanner(let event):
+            return "inRoomBanner currents=\(event.currents.count) playerStates=\(event.playerStates.count)"
+        case .linkLayer(let event):
+            return "linkLayer scene=\(event.scene.map(String.init) ?? "nil") messageType=\(event.messageType.map(String.init) ?? "nil") participants=\(event.participants.count)"
         case .workerInfo(let event):
             return "workerInfo schema=\(event.schemaVersion ?? "nil") socket=\(event.webSocketId ?? "nil")"
         case .transportConnect(let event):
@@ -110,6 +126,14 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
             return EulerDocumentedEventKind.linkMicFanTicketMethod.description
         case .linkMicArmies:
             return EulerDocumentedEventKind.linkMicArmies.description
+        case .goalUpdate:
+            return EulerDocumentedEventKind.goalUpdate.description
+        case .linkMicMethod:
+            return EulerDocumentedEventKind.linkMicMethod.description
+        case .inRoomBanner:
+            return EulerDocumentedEventKind.inRoomBanner.description
+        case .linkLayer:
+            return EulerDocumentedEventKind.linkLayer.description
         case .workerInfo:
             return "Worker-side transport metadata."
         case .transportConnect:
