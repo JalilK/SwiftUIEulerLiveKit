@@ -8,6 +8,7 @@ struct ContentView: View {
         NavigationStack {
             List {
                 connectionSection
+                coverageSection
                 latestEventSection
                 historySection
             }
@@ -45,15 +46,22 @@ struct ContentView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Status")
-                    .font(.caption)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(viewModel.statusHeadline)
+                    .font(.headline)
+                Text(viewModel.statusDetail)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
-                Text(viewModel.statusText)
-                    .font(.footnote.monospaced())
-                    .foregroundStyle(.secondary)
-                    .textSelection(.enabled)
+                if let technicalStatusDetail = viewModel.technicalStatusDetail {
+                    DisclosureGroup("Technical Details") {
+                        Text(technicalStatusDetail)
+                            .font(.footnote.monospaced())
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                    }
+                }
             }
+            .padding(.vertical, 4)
 
             HStack {
                 Button("Connect") {
@@ -72,6 +80,42 @@ struct ContentView: View {
                     .font(.footnote.monospaced())
                     .foregroundStyle(.red)
                     .textSelection(.enabled)
+            }
+        }
+    }
+
+    private var coverageSection: some View {
+        Section("Documented Event Coverage") {
+            if viewModel.records.isEmpty {
+                Text("Connect and capture events to see which TikTokLive Connector models already map to concrete native types.")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(viewModel.coverage, id: \.event) { item in
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text(item.event.displayName)
+                                .font(.headline)
+                            Spacer()
+                            Text(item.implemented ? "implemented" : "not implemented")
+                                .font(.caption.monospaced())
+                                .foregroundStyle(item.implemented ? .green : .orange)
+                        }
+                        Text("observed payloads \(item.observedRecordCount)")
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                        if item.observedPayloadTypes.isEmpty {
+                            Text("No matching payloads captured yet")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(item.observedPayloadTypes.joined(separator: ", "))
+                                .font(.caption.monospaced())
+                                .foregroundStyle(.secondary)
+                                .textSelection(.enabled)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
             }
         }
     }

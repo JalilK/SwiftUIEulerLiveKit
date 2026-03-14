@@ -9,7 +9,9 @@ final class ExampleViewModel: ObservableObject {
     private let userDefaults = UserDefaults.standard
 
     @Published var uniqueId: String
-    @Published var statusText: String = "idle"
+    @Published var statusHeadline: String = "Idle"
+    @Published var statusDetail: String = "Enter a TikTok uniqueId and connect."
+    @Published var technicalStatusDetail: String?
     @Published var records: [EulerDebugEventRecord] = []
     @Published var connectionError: String?
 
@@ -23,8 +25,13 @@ final class ExampleViewModel: ObservableObject {
         "\(Self.workerBaseURL)/token"
     }
 
+    var coverage: [EulerDocumentedEventCoverage] {
+        EulerEventDecoder.documentedEventCoverage(from: records)
+    }
+
     func connect() {
         connectionError = nil
+        technicalStatusDetail = nil
         records.removeAll()
 
         let trimmedUniqueId = uniqueId.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -40,6 +47,8 @@ final class ExampleViewModel: ObservableObject {
         }
 
         uniqueId = trimmedUniqueId
+        statusHeadline = "Connecting"
+        statusDetail = "Requesting a JWT from the worker and opening the Euler WebSocket."
 
         let configuration = EulerLiveConfiguration(backendBaseURL: backendURL, eventHistoryLimit: 500)
         let client = EulerLiveClient(
@@ -50,7 +59,10 @@ final class ExampleViewModel: ObservableObject {
         client.onStatusChange = { [weak self] status in
             Task { @MainActor in
                 guard let self else { return }
-                self.statusText = Self.describe(status)
+                let presentation = Self.presentableStatus(status)
+                self.statusHeadline = presentation.headline
+                self.statusDetail = presentation.detail
+                self.technicalStatusDetail = presentation.technicalDetail
 
                 if case .connected = status {
                     self.userDefaults.set(trimmedUniqueId, forKey: Self.lastSuccessfulUniqueIdDefaultsKey)
@@ -60,7 +72,6 @@ final class ExampleViewModel: ObservableObject {
 
         client.onEventRecord = { [weak self] record in
             Task { @MainActor in
-                EulerConsolePayloadPrinter.printLogBlock(for: record)
                 self?.records.insert(record, at: 0)
             }
         }
@@ -73,6 +84,9 @@ final class ExampleViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     self.connectionError = String(describing: error)
+                    self.statusHeadline = "Connection failed"
+                    self.statusDetail = "The app could not establish a usable session."
+                    self.technicalStatusDetail = String(describing: error)
                 }
             }
         }
@@ -80,6 +94,7 @@ final class ExampleViewModel: ObservableObject {
 
     func disconnect() {
         guard let client else { return }
+        connectionError = nil
         Task {
             await client.disconnect()
         }
@@ -90,23 +105,29 @@ final class ExampleViewModel: ObservableObject {
         client?.clearHistory()
     }
 
-    private static func describe(_ status: EulerConnectionStatus) -> String {
+    private static func presentableStatus(_ status: EulerConnectionStatus) -> (headline: String, detail: String, technicalDetail: String?) {
         switch status {
         case .idle:
-            return "idle"
+            return ("Idle", "Enter a TikTok uniqueId and connect.", nil)
         case .fetchingToken:
-            return "fetchingToken"
+            return ("Fetching token", "Requesting a short-lived JWT from the worker.", nil)
         case .connecting:
-            return "connecting"
+            return ("Connecting", "Opening the Euler WebSocket.", nil)
         case .connected(let roomInfo):
             if let roomInfo {
-                return "connected roomId=\(roomInfo.roomId ?? "nil") uniqueId=\(roomInfo.uniqueId ?? "nil")"
+                let name = roomInfo.nickname ?? roomInfo.uniqueId ?? "creator"
+                let viewers = roomInfo.currentViewers.map { " with \($0) viewers" } ?? ""
+                return ("Connected", "Live session active for \(name)\(viewers).", nil)
             }
-            return "connected"
+            return ("Connected", "Socket is open and waiting for room metadata.", nil)
         case .disconnected(let reason):
-            return "disconnected \(reason.description)"
+            return (
+                reason.userFacingTitle,
+                reason.userFacingMessage,
+                reason.isExpectedUserAction ? nil : reason.description
+            )
         case .failed(let error):
-            return "failed \(error.description)"
+            return ("Connection failed", error.description, error.description)
         }
     }
 }
