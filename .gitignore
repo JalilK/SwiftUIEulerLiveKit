@@ -1,0 +1,10 @@
+# Xcode user data
+xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# macOS
+.DS_Store
+
+# SwiftPM
+.build
+.swiftpm
