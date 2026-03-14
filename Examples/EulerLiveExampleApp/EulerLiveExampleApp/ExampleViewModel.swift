@@ -8,29 +8,30 @@ private let schemaVerifiedEventNames: Set<String> = [
     "chat",
     "room_user",
     "live_intro",
-    "room_message",
+    "caption_message",
+    "barrage",
+    "link_mic_fan_ticket_method",
     "worker_info",
     "tiktok.connect",
     "follow",
-    "share"
+    "share",
+    "like"
+]
+
+private let schemaDiscoveryTargetEventNames: Set<String> = [
+    "gift",
+    "room_message"
 ]
 
 private func shouldLogForSchemaDiscovery(_ record: EulerDebugEventRecord) -> Bool {
-    if record.decodedTypedEvent == nil {
-        return true
-    }
-
-    if case .unknown = record.decodedTypedEvent {
-        return true
-    }
-
-    return !schemaVerifiedEventNames.contains(record.eventName)
+    schemaDiscoveryTargetEventNames.contains(record.eventName)
 }
 
 @MainActor
 final class ExampleViewModel: ObservableObject {
     private static let lastSuccessfulUniqueIdDefaultsKey = "EulerLiveExampleApp.lastSuccessfulUniqueId"
     private static let workerBaseURL = "https://euler-token-worker.swiftui-euler-api-key.workers.dev"
+    private static let maxVisibleRecords = 120
 
     private let userDefaults = UserDefaults.standard
 
@@ -44,12 +45,17 @@ final class ExampleViewModel: ObservableObject {
     @Published var connectionError: String?
 
     private var client: EulerLiveClient?
+    private var coverageRefreshTask: Task<Void, Never>?
 
     init() {
         let saved = userDefaults.string(forKey: Self.lastSuccessfulUniqueIdDefaultsKey) ?? ""
         creatorInput = saved
         connectedUniqueId = saved
-        refreshCoverage()
+        refreshCoverageNow()
+    }
+
+    deinit {
+        coverageRefreshTask?.cancel()
     }
 
     var tokenEndpointDisplayText: String {
@@ -60,7 +66,7 @@ final class ExampleViewModel: ObservableObject {
         connectionError = nil
         technicalStatusDetail = nil
         records.removeAll()
-        refreshCoverage()
+        refreshCoverageNow()
 
         let trimmedUniqueId = creatorInput.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -100,14 +106,24 @@ final class ExampleViewModel: ObservableObject {
         }
 
         client.onEventRecord = { [weak self] record in
-            if shouldLogForSchemaDiscovery(record) {
-                EulerConsolePayloadPrinter.printLogBlock(for: record)
+            let fannedOutRecords = EulerEventDecoder.decodeRecords(from: record.rawPayload, receivedAt: record.receivedAt)
+
+            for item in fannedOutRecords where shouldLogForSchemaDiscovery(item) {
+                EulerConsolePayloadPrinter.printLogBlock(for: item)
             }
 
             Task { @MainActor in
                 guard let self else { return }
-                self.records.insert(record, at: 0)
-                self.refreshCoverage()
+
+                for item in fannedOutRecords.reversed() {
+                    self.records.insert(item, at: 0)
+                }
+
+                if self.records.count > Self.maxVisibleRecords {
+                    self.records.removeLast(self.records.count - Self.maxVisibleRecords)
+                }
+
+                self.scheduleCoverageRefresh()
             }
         }
 
@@ -137,11 +153,19 @@ final class ExampleViewModel: ObservableObject {
 
     func clearHistory() {
         records.removeAll()
-        refreshCoverage()
+        refreshCoverageNow()
         client?.clearHistory()
     }
 
-    private func refreshCoverage() {
+    private func scheduleCoverageRefresh() {
+        coverageRefreshTask?.cancel()
+        coverageRefreshTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            refreshCoverageNow()
+        }
+    }
+
+    private func refreshCoverageNow() {
         coverage = EulerEventDecoder.documentedEventCoverage(from: records)
     }
 
@@ -161,11 +185,7 @@ final class ExampleViewModel: ObservableObject {
             }
             return ("Connected", "Socket is open and waiting for room metadata.", nil)
         case .disconnected(let reason):
-            return (
-                reason.userFacingTitle,
-                reason.userFacingMessage,
-                reason.isExpectedUserAction ? nil : reason.description
-            )
+            return (reason.userFacingTitle, reason.userFacingMessage, reason.isExpectedUserAction ? nil : reason.description)
         case .failed(let error):
             return ("Connection failed", error.description, error.description)
         }

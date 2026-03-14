@@ -3,33 +3,15 @@ import Foundation
 public enum EulerEventDecoder {
     public static func decodeRecord(from rawPayload: String, receivedAt: Date = Date()) -> EulerDebugEventRecord {
         guard let data = rawPayload.data(using: .utf8) else {
-            return EulerDebugEventRecord(
-                eventName: "invalid_payload",
-                rawPayload: rawPayload,
-                decodedTypedEvent: nil,
-                decodeOutcome: .invalidJSON,
-                receivedAt: receivedAt
-            )
+            return EulerDebugEventRecord(eventName: "invalid_payload", rawPayload: rawPayload, decodedTypedEvent: nil, decodeOutcome: .invalidJSON, receivedAt: receivedAt)
         }
 
         guard let json = try? JSONSerialization.jsonObject(with: data) else {
-            return EulerDebugEventRecord(
-                eventName: "invalid_payload",
-                rawPayload: rawPayload,
-                decodedTypedEvent: nil,
-                decodeOutcome: .invalidJSON,
-                receivedAt: receivedAt
-            )
+            return EulerDebugEventRecord(eventName: "invalid_payload", rawPayload: rawPayload, decodedTypedEvent: nil, decodeOutcome: .invalidJSON, receivedAt: receivedAt)
         }
 
         guard let object = json as? [String: Any] else {
-            return EulerDebugEventRecord(
-                eventName: "unsupported_payload",
-                rawPayload: rawPayload,
-                decodedTypedEvent: nil,
-                decodeOutcome: .unsupportedPayload,
-                receivedAt: receivedAt
-            )
+            return EulerDebugEventRecord(eventName: "unsupported_payload", rawPayload: rawPayload, decodedTypedEvent: nil, decodeOutcome: .unsupportedPayload, receivedAt: receivedAt)
         }
 
         let eventName = normalizedEventName(from: object)
@@ -43,6 +25,27 @@ public enum EulerEventDecoder {
             decodeOutcome: outcome,
             receivedAt: receivedAt
         )
+    }
+
+    public static func decodeRecords(from rawPayload: String, receivedAt: Date = Date()) -> [EulerDebugEventRecord] {
+        guard let payloadData = rawPayload.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: payloadData) as? [String: Any],
+              let messages = json["messages"] as? [[String: Any]],
+              messages.count > 1 else {
+            return [decodeRecord(from: rawPayload, receivedAt: receivedAt)]
+        }
+
+        return messages.compactMap { message in
+            var singleEnvelope: [String: Any] = json
+            singleEnvelope["messages"] = [message]
+
+            guard let data = try? JSONSerialization.data(withJSONObject: singleEnvelope),
+                  let text = String(data: data, encoding: .utf8) else {
+                return nil
+            }
+
+            return decodeRecord(from: text, receivedAt: receivedAt)
+        }
     }
 
     public static func documentedEventCoverage(from records: [EulerDebugEventRecord]) -> [EulerDocumentedEventCoverage] {
@@ -62,9 +65,7 @@ public enum EulerEventDecoder {
     }
 
     private static func decodeOutcome(for typedEvent: EulerLiveEvent?) -> EulerDecodeOutcome {
-        guard let typedEvent else {
-            return .unknownEvent
-        }
+        guard let typedEvent else { return .unknownEvent }
 
         switch typedEvent {
         case .unknown:
@@ -99,12 +100,19 @@ public enum EulerEventDecoder {
         case .roomMessage(let event):
             let hasStrongData = event.displayText != nil || event.content != nil
             return hasStrongData ? .decoded : .decodedWithPartialData
+        case .caption(let event):
+            return event.lines.isEmpty ? .decodedWithPartialData : .decoded
+        case .barrage(let event):
+            let hasStrongData = event.displayText != nil || event.uniqueId != nil || event.nickname != nil
+            return hasStrongData ? .decoded : .decodedWithPartialData
+        case .linkMicFanTicket(let event):
+            let hasStrongData = event.totalLinkMicFanTicket != nil || !event.users.isEmpty
+            return hasStrongData ? .decoded : .decodedWithPartialData
         case .workerInfo(let event):
             let hasStrongData = event.webSocketId != nil || event.schemaVersion != nil
             return hasStrongData ? .decoded : .decodedWithPartialData
         case .transportConnect(let event):
-            let hasStrongData = event.agentId != nil
-            return hasStrongData ? .decoded : .decodedWithPartialData
+            return event.agentId != nil ? .decoded : .decodedWithPartialData
         }
     }
 
@@ -130,22 +138,15 @@ public enum EulerEventDecoder {
     private static func socialEventName(from object: [String: Any]) -> String {
         if let action = findString(in: object, matchingAnyOf: ["action"]) {
             switch action {
-            case "1":
-                return "follow"
-            case "3":
-                return "share"
-            default:
-                break
+            case "1": return "follow"
+            case "3": return "share"
+            default: break
             }
         }
 
         if let pattern = findString(in: object, matchingAnyOf: ["defaultPattern"])?.lowercased() {
-            if pattern.contains("followed the live") {
-                return "follow"
-            }
-            if pattern.contains("shared the live") {
-                return "share"
-            }
+            if pattern.contains("followed the live") { return "follow" }
+            if pattern.contains("shared the live") { return "share" }
         }
 
         return "webcastsocialmessage"
@@ -179,6 +180,12 @@ public enum EulerEventDecoder {
             return "live_intro"
         case "roommessage", "room_message", "webcastroommessage":
             return "room_message"
+        case "captionmessage", "caption_message", "webcastcaptionmessage":
+            return "caption_message"
+        case "barrage", "webcastbarragemessage":
+            return "barrage"
+        case "linkmicfanticketmethod", "link_mic_fan_ticket_method", "webcastlinkmicfanticketmethod":
+            return "link_mic_fan_ticket_method"
         case "workerinfo", "worker_info":
             return "worker_info"
         case "tiktok.connect":
@@ -217,10 +224,12 @@ public enum EulerEventDecoder {
                 GiftEvent(
                     uniqueId: findString(in: payload, matchingAnyOf: ["uniqueId", "unique_id"]),
                     nickname: findString(in: payload, matchingAnyOf: ["nickname", "nickName", "displayName"]),
-                    giftName: findString(in: payload, matchingAnyOf: ["giftName", "gift_name", "name"]),
+                    giftName: findString(in: payload, matchingAnyOf: ["giftName", "name", "gift_name"]),
                     giftId: findInt(in: payload, matchingAnyOf: ["giftId", "gift_id", "id"]),
-                    repeatCount: findInt(in: payload, matchingAnyOf: ["repeatCount", "repeat_count", "count"]),
-                    repeatEnd: findBool(in: payload, matchingAnyOf: ["repeatEnd"])
+                    repeatCount: findInt(in: payload, matchingAnyOf: ["repeatCount", "repeat_count", "comboCount", "count"]),
+                    repeatEnd: findBool(in: payload, matchingAnyOf: ["repeatEnd"]),
+                    giftType: findInt(in: payload, matchingAnyOf: ["giftType"]),
+                    displayText: findString(in: payload, matchingAnyOf: ["defaultPattern", "describe"])
                 )
             )
         case "like":
@@ -287,6 +296,42 @@ public enum EulerEventDecoder {
                     displayText: findString(in: payload, matchingAnyOf: ["defaultPattern"])
                 )
             )
+        case "caption_message":
+            return .caption(
+                CaptionEvent(
+                    roomId: findString(in: payload, matchingAnyOf: ["roomId", "room_id"]),
+                    timestampMs: findInt(in: payload, matchingAnyOf: ["timestampMs"]),
+                    durationMs: findInt(in: payload, matchingAnyOf: ["durationMs"]),
+                    sentenceId: findString(in: payload, matchingAnyOf: ["sentenceId"]),
+                    sequenceId: findString(in: payload, matchingAnyOf: ["sequenceId"]),
+                    definite: findBool(in: payload, matchingAnyOf: ["definite"]),
+                    lines: extractCaptionLines(from: payload)
+                )
+            )
+        case "barrage":
+            return .barrage(
+                BarrageEvent(
+                    roomId: findString(in: payload, matchingAnyOf: ["roomId", "room_id"]),
+                    messageType: findInt(in: payload, matchingAnyOf: ["msgType"]),
+                    durationMs: findInt(in: payload, matchingAnyOf: ["duration"]),
+                    displayText: findString(in: payload, matchingAnyOf: ["defaultPattern"]),
+                    userId: findString(in: payload, matchingAnyOf: ["userId", "fromUserId"]),
+                    uniqueId: findString(in: payload, matchingAnyOf: ["uniqueId", "displayId"]),
+                    nickname: findString(in: payload, matchingAnyOf: ["nickname", "nickName"])
+                )
+            )
+        case "link_mic_fan_ticket_method":
+            return .linkMicFanTicket(
+                LinkMicFanTicketEvent(
+                    roomId: findString(in: payload, matchingAnyOf: ["roomId", "room_id"]),
+                    totalLinkMicFanTicket: findInt(in: payload, matchingAnyOf: ["TotalLinkMicFanTicket"]),
+                    matchId: findString(in: payload, matchingAnyOf: ["MatchId"]),
+                    eventTime: findInt(in: payload, matchingAnyOf: ["EventTime"]),
+                    playId: findString(in: payload, matchingAnyOf: ["playId"]),
+                    playScene: findInt(in: payload, matchingAnyOf: ["playScene"]),
+                    users: extractLinkMicFanTicketUsers(from: payload)
+                )
+            )
         case "worker_info":
             return .workerInfo(
                 WorkerInfoEvent(
@@ -298,23 +343,12 @@ public enum EulerEventDecoder {
                 )
             )
         case "tiktok.connect":
-            return .transportConnect(
-                TransportConnectEvent(
-                    agentId: findString(in: payload, matchingAnyOf: ["agentId"])
-                )
-            )
+            return .transportConnect(TransportConnectEvent(agentId: findString(in: payload, matchingAnyOf: ["agentId"])))
         case "unknown":
             return nil
         default:
             return .unknown(eventName: eventName)
         }
-    }
-
-    private static func extractPrimaryMessageType(from object: [String: Any]) -> String? {
-        if let messages = object["messages"] as? [[String: Any]], let first = messages.first, let type = first["type"] as? String {
-            return type
-        }
-        return nil
     }
 
     private static func recordMatchesDocumentedEvent(_ record: EulerDebugEventRecord, documentedEvent: EulerDocumentedEventKind) -> Bool {
@@ -324,27 +358,26 @@ public enum EulerEventDecoder {
 
         let primaryType = extractPrimaryMessageType(fromRawPayload: record.rawPayload)?.lowercased() ?? ""
         switch documentedEvent {
-        case .roomInfo:
-            return record.eventName == "room_info" || primaryType == "roominfo"
-        case .member:
-            return record.eventName == "member" || primaryType == "webcastmembermessage"
-        case .gift:
-            return record.eventName == "gift" || primaryType == "webcastgiftmessage"
-        case .like:
-            return record.eventName == "like" || primaryType == "webcastlikemessage"
-        case .chat:
-            return record.eventName == "chat" || primaryType == "webcastchatmessage"
-        case .follow:
-            return record.eventName == "follow" || primaryType == "webcastsocialmessage"
-        case .share:
-            return record.eventName == "share" || primaryType == "webcastsocialmessage"
-        case .roomUser:
-            return record.eventName == "room_user" || primaryType == "webcastroomuserseqmessage"
-        case .liveIntro:
-            return record.eventName == "live_intro" || primaryType == "webcastliveintromessage"
-        case .roomMessage:
-            return record.eventName == "room_message" || primaryType == "webcastroommessage"
+        case .roomInfo: return record.eventName == "room_info" || primaryType == "roominfo"
+        case .member: return record.eventName == "member" || primaryType == "webcastmembermessage"
+        case .gift: return record.eventName == "gift" || primaryType == "webcastgiftmessage"
+        case .like: return record.eventName == "like" || primaryType == "webcastlikemessage"
+        case .chat: return record.eventName == "chat" || primaryType == "webcastchatmessage"
+        case .follow: return record.eventName == "follow" || primaryType == "webcastsocialmessage"
+        case .share: return record.eventName == "share" || primaryType == "webcastsocialmessage"
+        case .roomUser: return record.eventName == "room_user" || primaryType == "webcastroomuserseqmessage"
+        case .liveIntro: return record.eventName == "live_intro" || primaryType == "webcastliveintromessage"
+        case .roomMessage: return record.eventName == "room_message" || primaryType == "webcastroommessage"
         }
+    }
+
+    private static func extractPrimaryMessageType(from object: [String: Any]) -> String? {
+        if let messages = object["messages"] as? [[String: Any]],
+           let first = messages.first,
+           let type = first["type"] as? String {
+            return type
+        }
+        return nil
     }
 
     private static func extractPrimaryMessageType(fromRawPayload rawPayload: String) -> String? {
@@ -357,31 +390,62 @@ public enum EulerEventDecoder {
         return extractPrimaryMessageType(from: json)
     }
 
-    private static func findString(in value: Any, matchingAnyOf keys: [String]) -> String? {
+    private static func extractCaptionLines(from payload: [String: Any]) -> [CaptionLine] {
+        guard let content = findArray(in: payload, matchingAnyOf: ["content"]) else { return [] }
+        return content.compactMap { item in
+            guard let object = item as? [String: Any] else { return nil }
+            return CaptionLine(language: object["lang"] as? String, content: object["content"] as? String)
+        }
+    }
+
+    private static func extractLinkMicFanTicketUsers(from payload: [String: Any]) -> [LinkMicFanTicketUser] {
+        guard let users = findArray(in: payload, matchingAnyOf: ["UserFanTicketList"]) else { return [] }
+        return users.compactMap { item in
+            guard let object = item as? [String: Any] else { return nil }
+            return LinkMicFanTicketUser(
+                userId: object["UserId"] as? String,
+                fanTicket: int(fromAny: object["FanTicket"]),
+                matchTotalScore: int(fromAny: object["MatchTotalScore"]),
+                matchRank: int(fromAny: object["MatchRank"])
+            )
+        }
+    }
+
+    private static func findArray(in value: Any, matchingAnyOf keys: [String]) -> [Any]? {
         if let object = value as? [String: Any] {
             for key in keys {
-                if let direct = object[key] {
-                    if let string = direct as? String, !string.isEmpty {
-                        return string
-                    }
-                    if let number = direct as? NSNumber {
-                        return number.stringValue
-                    }
-                }
+                if let array = object[key] as? [Any] { return array }
             }
-
             for child in object.values {
-                if let string = findString(in: child, matchingAnyOf: keys) {
-                    return string
-                }
+                if let array = findArray(in: child, matchingAnyOf: keys) { return array }
             }
         }
 
         if let array = value as? [Any] {
             for item in array {
-                if let string = findString(in: item, matchingAnyOf: keys) {
-                    return string
+                if let nested = findArray(in: item, matchingAnyOf: keys) { return nested }
+            }
+        }
+
+        return nil
+    }
+
+    private static func findString(in value: Any, matchingAnyOf keys: [String]) -> String? {
+        if let object = value as? [String: Any] {
+            for key in keys {
+                if let direct = object[key] {
+                    if let string = direct as? String, !string.isEmpty { return string }
+                    if let number = direct as? NSNumber { return number.stringValue }
                 }
+            }
+            for child in object.values {
+                if let string = findString(in: child, matchingAnyOf: keys) { return string }
+            }
+        }
+
+        if let array = value as? [Any] {
+            for item in array {
+                if let string = findString(in: item, matchingAnyOf: keys) { return string }
             }
         }
 
@@ -391,34 +455,27 @@ public enum EulerEventDecoder {
     private static func findInt(in value: Any, matchingAnyOf keys: [String]) -> Int? {
         if let object = value as? [String: Any] {
             for key in keys {
-                if let direct = object[key] {
-                    if let int = direct as? Int {
-                        return int
-                    }
-                    if let number = direct as? NSNumber {
-                        return number.intValue
-                    }
-                    if let string = direct as? String, let int = Int(string) {
-                        return int
-                    }
-                }
+                if let direct = object[key], let int = int(fromAny: direct) { return int }
             }
-
             for child in object.values {
-                if let int = findInt(in: child, matchingAnyOf: keys) {
-                    return int
-                }
+                if let int = findInt(in: child, matchingAnyOf: keys) { return int }
             }
         }
 
         if let array = value as? [Any] {
             for item in array {
-                if let int = findInt(in: item, matchingAnyOf: keys) {
-                    return int
-                }
+                if let int = findInt(in: item, matchingAnyOf: keys) { return int }
             }
         }
 
+        return nil
+    }
+
+    private static func int(fromAny value: Any?) -> Int? {
+        guard let value else { return nil }
+        if let int = value as? Int { return int }
+        if let number = value as? NSNumber { return number.intValue }
+        if let string = value as? String, let int = Int(string) { return int }
         return nil
     }
 
@@ -426,37 +483,25 @@ public enum EulerEventDecoder {
         if let object = value as? [String: Any] {
             for key in keys {
                 if let direct = object[key] {
-                    if let bool = direct as? Bool {
-                        return bool
-                    }
-                    if let number = direct as? NSNumber {
-                        return number.boolValue
-                    }
+                    if let bool = direct as? Bool { return bool }
+                    if let number = direct as? NSNumber { return number.boolValue }
                     if let string = direct as? String {
                         switch string.lowercased() {
-                        case "true", "1":
-                            return true
-                        case "false", "0":
-                            return false
-                        default:
-                            break
+                        case "true", "1": return true
+                        case "false", "0": return false
+                        default: break
                         }
                     }
                 }
             }
-
             for child in object.values {
-                if let bool = findBool(in: child, matchingAnyOf: keys) {
-                    return bool
-                }
+                if let bool = findBool(in: child, matchingAnyOf: keys) { return bool }
             }
         }
 
         if let array = value as? [Any] {
             for item in array {
-                if let bool = findBool(in: item, matchingAnyOf: keys) {
-                    return bool
-                }
+                if let bool = findBool(in: item, matchingAnyOf: keys) { return bool }
             }
         }
 
