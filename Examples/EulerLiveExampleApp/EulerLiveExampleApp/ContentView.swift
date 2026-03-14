@@ -38,9 +38,11 @@ struct ContentView: View {
                     .foregroundStyle(.secondary)
             }
 
-            TextField("TikTok uniqueId", text: $viewModel.uniqueId)
+            TextField("TikTok uniqueId", text: $viewModel.creatorInput)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
+                .font(.body.monospaced())
+                .submitLabel(.go)
 
             Text("The app remembers the last creator that connected successfully.")
                 .font(.caption)

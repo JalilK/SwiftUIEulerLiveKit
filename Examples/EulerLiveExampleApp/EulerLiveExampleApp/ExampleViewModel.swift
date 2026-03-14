@@ -6,35 +6,49 @@ import EulerLiveKit
 final class ExampleViewModel: ObservableObject {
     private static let lastSuccessfulUniqueIdDefaultsKey = "EulerLiveExampleApp.lastSuccessfulUniqueId"
     private static let workerBaseURL = "https://euler-token-worker.swiftui-euler-api-key.workers.dev"
+
+    private static let verifiedEventNames: Set<String> = [
+        "room_info",
+        "member",
+        "chat",
+        "room_user",
+        "live_intro",
+        "room_message",
+        "worker_info",
+        "tiktok.connect"
+    ]
+
     private let userDefaults = UserDefaults.standard
 
-    @Published var uniqueId: String
+    @Published var creatorInput: String
+    @Published private(set) var connectedUniqueId: String = ""
     @Published var statusHeadline: String = "Idle"
     @Published var statusDetail: String = "Enter a TikTok uniqueId and connect."
     @Published var technicalStatusDetail: String?
     @Published var records: [EulerDebugEventRecord] = []
+    @Published var coverage: [EulerDocumentedEventCoverage] = []
     @Published var connectionError: String?
 
     private var client: EulerLiveClient?
 
     init() {
-        uniqueId = userDefaults.string(forKey: Self.lastSuccessfulUniqueIdDefaultsKey) ?? ""
+        let saved = userDefaults.string(forKey: Self.lastSuccessfulUniqueIdDefaultsKey) ?? ""
+        creatorInput = saved
+        connectedUniqueId = saved
+        refreshCoverage()
     }
 
     var tokenEndpointDisplayText: String {
         "\(Self.workerBaseURL)/token"
     }
 
-    var coverage: [EulerDocumentedEventCoverage] {
-        EulerEventDecoder.documentedEventCoverage(from: records)
-    }
-
     func connect() {
         connectionError = nil
         technicalStatusDetail = nil
         records.removeAll()
+        refreshCoverage()
 
-        let trimmedUniqueId = uniqueId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedUniqueId = creatorInput.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard let backendURL = URL(string: Self.workerBaseURL) else {
             connectionError = "Invalid built-in Worker URL"
@@ -46,7 +60,8 @@ final class ExampleViewModel: ObservableObject {
             return
         }
 
-        uniqueId = trimmedUniqueId
+        creatorInput = trimmedUniqueId
+        connectedUniqueId = trimmedUniqueId
         statusHeadline = "Connecting"
         statusDetail = "Requesting a JWT from the worker and opening the Euler WebSocket."
 
@@ -71,8 +86,14 @@ final class ExampleViewModel: ObservableObject {
         }
 
         client.onEventRecord = { [weak self] record in
+            if Self.shouldLogForSchemaDiscovery(record) {
+                EulerConsolePayloadPrinter.printLogBlock(for: record)
+            }
+
             Task { @MainActor in
-                self?.records.insert(record, at: 0)
+                guard let self else { return }
+                self.records.insert(record, at: 0)
+                self.refreshCoverage()
             }
         }
 
@@ -102,7 +123,24 @@ final class ExampleViewModel: ObservableObject {
 
     func clearHistory() {
         records.removeAll()
+        refreshCoverage()
         client?.clearHistory()
+    }
+
+    private func refreshCoverage() {
+        coverage = EulerEventDecoder.documentedEventCoverage(from: records)
+    }
+
+    private static func shouldLogForSchemaDiscovery(_ record: EulerDebugEventRecord) -> Bool {
+        if record.decodedTypedEvent == nil {
+            return true
+        }
+
+        if case .unknown = record.decodedTypedEvent {
+            return true
+        }
+
+        return !verifiedEventNames.contains(record.eventName)
     }
 
     private static func presentableStatus(_ status: EulerConnectionStatus) -> (headline: String, detail: String, technicalDetail: String?) {
