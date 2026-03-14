@@ -2,21 +2,53 @@ import Foundation
 import SwiftUI
 import EulerLiveKit
 
+private let schemaDiscoveryTargetEventNames: Set<String> = []
+
+private func shouldLogForSchemaDiscovery(_ record: EulerDebugEventRecord) -> Bool {
+    if schemaDiscoveryTargetEventNames.contains(record.eventName) {
+        return true
+    }
+
+    if record.decodedTypedEvent == nil {
+        return true
+    }
+
+    if case .unknown = record.decodedTypedEvent {
+        return true
+    }
+
+    return false
+}
+
 @MainActor
 final class ExampleViewModel: ObservableObject {
     private static let lastSuccessfulUniqueIdDefaultsKey = "EulerLiveExampleApp.lastSuccessfulUniqueId"
     private static let workerBaseURL = "https://euler-token-worker.swiftui-euler-api-key.workers.dev"
+    private static let maxVisibleRecords = 120
+
     private let userDefaults = UserDefaults.standard
 
-    @Published var uniqueId: String
-    @Published var statusText: String = "idle"
+    @Published var creatorInput: String
+    @Published private(set) var connectedUniqueId: String = ""
+    @Published var statusHeadline: String = "Idle"
+    @Published var statusDetail: String = "Enter a TikTok uniqueId and connect."
+    @Published var technicalStatusDetail: String?
     @Published var records: [EulerDebugEventRecord] = []
+    @Published var coverage: [EulerDocumentedEventCoverage] = []
     @Published var connectionError: String?
 
     private var client: EulerLiveClient?
+    private var coverageRefreshTask: Task<Void, Never>?
 
     init() {
-        uniqueId = userDefaults.string(forKey: Self.lastSuccessfulUniqueIdDefaultsKey) ?? ""
+        let saved = userDefaults.string(forKey: Self.lastSuccessfulUniqueIdDefaultsKey) ?? ""
+        creatorInput = saved
+        connectedUniqueId = saved
+        refreshCoverageNow()
+    }
+
+    deinit {
+        coverageRefreshTask?.cancel()
     }
 
     var tokenEndpointDisplayText: String {
@@ -25,9 +57,11 @@ final class ExampleViewModel: ObservableObject {
 
     func connect() {
         connectionError = nil
+        technicalStatusDetail = nil
         records.removeAll()
+        refreshCoverageNow()
 
-        let trimmedUniqueId = uniqueId.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedUniqueId = creatorInput.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard let backendURL = URL(string: Self.workerBaseURL) else {
             connectionError = "Invalid built-in Worker URL"
@@ -39,7 +73,10 @@ final class ExampleViewModel: ObservableObject {
             return
         }
 
-        uniqueId = trimmedUniqueId
+        creatorInput = trimmedUniqueId
+        connectedUniqueId = trimmedUniqueId
+        statusHeadline = "Connecting"
+        statusDetail = "Requesting a JWT from the worker and opening the Euler WebSocket."
 
         let configuration = EulerLiveConfiguration(backendBaseURL: backendURL, eventHistoryLimit: 500)
         let client = EulerLiveClient(
@@ -50,7 +87,10 @@ final class ExampleViewModel: ObservableObject {
         client.onStatusChange = { [weak self] status in
             Task { @MainActor in
                 guard let self else { return }
-                self.statusText = Self.describe(status)
+                let presentation = Self.presentableStatus(status)
+                self.statusHeadline = presentation.headline
+                self.statusDetail = presentation.detail
+                self.technicalStatusDetail = presentation.technicalDetail
 
                 if case .connected = status {
                     self.userDefaults.set(trimmedUniqueId, forKey: Self.lastSuccessfulUniqueIdDefaultsKey)
@@ -59,9 +99,24 @@ final class ExampleViewModel: ObservableObject {
         }
 
         client.onEventRecord = { [weak self] record in
+            let fannedOutRecords = EulerEventDecoder.decodeRecords(from: record.rawPayload, receivedAt: record.receivedAt)
+
+            for item in fannedOutRecords where shouldLogForSchemaDiscovery(item) {
+                EulerConsolePayloadPrinter.printLogBlock(for: item)
+            }
+
             Task { @MainActor in
-                EulerConsolePayloadPrinter.printLogBlock(for: record)
-                self?.records.insert(record, at: 0)
+                guard let self else { return }
+
+                for item in fannedOutRecords.reversed() {
+                    self.records.insert(item, at: 0)
+                }
+
+                if self.records.count > Self.maxVisibleRecords {
+                    self.records.removeLast(self.records.count - Self.maxVisibleRecords)
+                }
+
+                self.scheduleCoverageRefresh()
             }
         }
 
@@ -73,6 +128,9 @@ final class ExampleViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     self.connectionError = String(describing: error)
+                    self.statusHeadline = "Connection failed"
+                    self.statusDetail = "The app could not establish a usable session."
+                    self.technicalStatusDetail = String(describing: error)
                 }
             }
         }
@@ -80,6 +138,7 @@ final class ExampleViewModel: ObservableObject {
 
     func disconnect() {
         guard let client else { return }
+        connectionError = nil
         Task {
             await client.disconnect()
         }
@@ -87,26 +146,41 @@ final class ExampleViewModel: ObservableObject {
 
     func clearHistory() {
         records.removeAll()
+        refreshCoverageNow()
         client?.clearHistory()
     }
 
-    private static func describe(_ status: EulerConnectionStatus) -> String {
+    private func scheduleCoverageRefresh() {
+        coverageRefreshTask?.cancel()
+        coverageRefreshTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            refreshCoverageNow()
+        }
+    }
+
+    private func refreshCoverageNow() {
+        coverage = EulerEventDecoder.documentedEventCoverage(from: records)
+    }
+
+    private static func presentableStatus(_ status: EulerConnectionStatus) -> (headline: String, detail: String, technicalDetail: String?) {
         switch status {
         case .idle:
-            return "idle"
+            return ("Idle", "Enter a TikTok uniqueId and connect.", nil)
         case .fetchingToken:
-            return "fetchingToken"
+            return ("Fetching token", "Requesting a short-lived JWT from the worker.", nil)
         case .connecting:
-            return "connecting"
+            return ("Connecting", "Opening the Euler WebSocket.", nil)
         case .connected(let roomInfo):
             if let roomInfo {
-                return "connected roomId=\(roomInfo.roomId ?? "nil") uniqueId=\(roomInfo.uniqueId ?? "nil")"
+                let name = roomInfo.nickname ?? roomInfo.uniqueId ?? "creator"
+                let viewers = roomInfo.currentViewers.map { " with \($0) viewers" } ?? ""
+                return ("Connected", "Live session active for \(name)\(viewers).", nil)
             }
-            return "connected"
+            return ("Connected", "Socket is open and waiting for room metadata.", nil)
         case .disconnected(let reason):
-            return "disconnected \(reason.description)"
+            return (reason.userFacingTitle, reason.userFacingMessage, reason.isExpectedUserAction ? nil : reason.description)
         case .failed(let error):
-            return "failed \(error.description)"
+            return ("Connection failed", error.description, error.description)
         }
     }
 }

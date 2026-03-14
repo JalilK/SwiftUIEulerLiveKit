@@ -54,4 +54,53 @@ public enum EulerDisconnectReason: Sendable, Equatable, CustomStringConvertible 
             return "Transport error: \(message)"
         }
     }
+
+    public var userFacingTitle: String {
+        switch self {
+        case .requestedByClient, .normalClosure:
+            return "Disconnected"
+        case .notLive:
+            return "Creator is not live"
+        case .tooManyConnections:
+            return "Connection limit reached"
+        case .invalidAuth, .noPermission:
+            return "Authorization failed"
+        case .streamEnded:
+            return "Stream ended"
+        default:
+            return "Connection ended"
+        }
+    }
+
+    public var userFacingMessage: String {
+        switch self {
+        case .requestedByClient:
+            return "You disconnected from the stream."
+        case .normalClosure:
+            return "The connection closed normally."
+        case .notLive:
+            return "That creator is not live right now."
+        case .tooManyConnections:
+            return "Euler rejected the connection because too many sockets are open or reconnects happened too quickly."
+        case .invalidAuth:
+            return "The worker returned credentials that Euler did not accept."
+        case .noPermission:
+            return "The JWT key does not have access to that creator."
+        case .streamEnded:
+            return "The creator ended the stream."
+        case .transportError:
+            return "The socket closed unexpectedly. Open Technical Details if you need the raw transport error."
+        default:
+            return description
+        }
+    }
+
+    public var isExpectedUserAction: Bool {
+        switch self {
+        case .requestedByClient, .normalClosure:
+            return true
+        default:
+            return false
+        }
+    }
 }

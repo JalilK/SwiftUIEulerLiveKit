@@ -8,12 +8,18 @@ struct EulerLiveSessionCallbacks {
 actor EulerLiveSession {
     typealias SocketFactory = @Sendable () -> any EulerWebSocketClient
 
+    private enum DisconnectIntent {
+        case none
+        case requestedByClient
+    }
+
     private let configuration: EulerLiveConfiguration
     private let tokenProvider: any EulerTokenProvider
     private let socketFactory: SocketFactory
 
     private var socket: (any EulerWebSocketClient)?
     private var receiveTask: Task<Void, Never>?
+    private var disconnectIntent: DisconnectIntent = .none
 
     init(
         configuration: EulerLiveConfiguration,
@@ -26,6 +32,7 @@ actor EulerLiveSession {
     }
 
     func connect(to uniqueId: String, callbacks: EulerLiveSessionCallbacks) async throws {
+        disconnectIntent = .none
         callbacks.onStatusChange(.fetchingToken)
         let credentials = try await tokenProvider.fetchCredentials(for: uniqueId)
 
@@ -42,6 +49,7 @@ actor EulerLiveSession {
     }
 
     func disconnect() async {
+        disconnectIntent = .requestedByClient
         receiveTask?.cancel()
         receiveTask = nil
         await socket?.disconnect(closeCode: 1000)
@@ -70,7 +78,18 @@ actor EulerLiveSession {
                     hasEmittedConnectedState = true
                 }
             }
+
+            if disconnectIntent == .requestedByClient {
+                callbacks.onStatusChange(.disconnected(.requestedByClient))
+            }
+        } catch is CancellationError {
+            callbacks.onStatusChange(.disconnected(disconnectIntent == .requestedByClient ? .requestedByClient : .normalClosure))
         } catch {
+            if disconnectIntent == .requestedByClient {
+                callbacks.onStatusChange(.disconnected(.requestedByClient))
+                return
+            }
+
             let reason: EulerDisconnectReason
             if let liveError = error as? EulerLiveError {
                 switch liveError {
