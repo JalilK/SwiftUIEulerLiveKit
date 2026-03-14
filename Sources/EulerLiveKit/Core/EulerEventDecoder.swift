@@ -50,7 +50,7 @@ enum EulerEventDecoder {
             let matches = records.filter { record in
                 recordMatchesDocumentedEvent(record, documentedEvent: event)
             }
-            let payloadTypes = Array(Set(matches.compactMap(extractPrimaryMessageType(from:)))).sorted()
+            let payloadTypes = Array(Set(matches.compactMap { extractPrimaryMessageType(fromRawPayload: $0.rawPayload) })).sorted()
             return EulerDocumentedEventCoverage(
                 event: event,
                 implemented: matches.contains { $0.decodedTypedEvent?.eventName == event.rawValue },
