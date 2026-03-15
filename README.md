@@ -1,128 +1,91 @@
+
 # EulerLiveKit
 
-EulerLiveKit is a Swift package for connecting iOS and SwiftUI apps to Euler Stream TikTok LIVE WebSocket events through a backend-issued JWT.
+EulerLiveKit is a Swift package for SwiftUI apps that want a clean, typed client for Euler Stream TikTok LIVE events.
 
-This checkpoint adds a debug event record path across the package so every inbound message can carry
+The package handles three responsibilities.
 
-- event name
-- raw payload
-- decoded typed event when available
-- decode outcome
-- receive timestamp
+• request short-lived websocket credentials from a backend  
+• open and manage the websocket connection  
+• convert raw payloads into typed Swift models while preserving the original payload for debugging
 
-## What changed in this iteration
+The goal is a SwiftUI-friendly interface for TikTok LIVE event streams.
 
-- Added `EulerDebugEventRecord` as the canonical debug surface for inbound messages.
-- Added `EulerDecodeOutcome` to classify decode results.
-- Updated the event decoder to preserve the original raw payload for every message.
-- Updated the session and client layers to store `EulerDebugEventRecord` history.
-- Updated the example app to inspect full raw payloads on device.
-- Added tests for raw payload retention and decoder classification.
+---
 
-## Euler constraints carried forward
+## Installation
 
-- JWT signing remains on the backend.
-- Euler API keys stay off the client.
-- The package remains general purpose rather than app specific.
+Add the package with Swift Package Manager.
 
-## Backend contract
+.package(url: "https://github.com/JalilK/SwiftUIEulerLiveKit.git", from: "0.1.0")
 
-Your backend should expose `POST /token` and return JSON in this shape.
+---
 
-```json
-{
-  "creator": "thatgirldollar",
-  "jwtKey": "token_here",
-  "websocketURL": "wss://ws.eulerstream.com?uniqueId=thatgirldollar&jwtKey=token_here",
-  "expiresInSeconds": 60,
-  "strategy": "optional"
-}
-```
+## Architecture
 
-## Quick start
+SwiftUI App  
+→ EulerLiveClient  
+→ TokenProvider  
+→ Backend Token Route  
+→ Euler Stream WebSocket  
+→ Event Decoder  
+→ Typed Event Models + Debug Records
 
-```swift
-import EulerLiveKit
+---
 
-let configuration = EulerLiveConfiguration(
-    backendBaseURL: URL(string: "https://euler-token-worker.swiftui-euler-api-key.workers.dev")!
-)
-let tokenProvider = BackendTokenService(configuration: configuration)
-let client = EulerLiveClient(
-    configuration: configuration,
-    tokenProvider: tokenProvider
-)
+## Core Types
 
-client.onStatusChange = { status in
-    print("status", status)
-}
+EulerLiveConfiguration  
+Defines token endpoint and limits.
 
-client.onEventRecord = { record in
-    EulerConsolePayloadPrinter.printLogBlock(for: record)
-}
+EulerTokenProvider  
+Protocol responsible for retrieving websocket credentials.
 
-Task {
-    try await client.connect(to: "thatgirldollar")
-}
-```
+BackendTokenService  
+Default implementation that calls your backend.
 
-## Run tests
+EulerLiveClient  
+Main entry point for connecting to a stream and receiving events.
 
-```bash
+EulerDebugEventRecord  
+Canonical event representation containing
+
+event name  
+raw payload  
+typed event model  
+decode outcome  
+timestamp
+
+---
+
+## Security Boundary
+
+Euler API keys must never ship in the client.
+
+The mobile app requests a short-lived JWT from a backend token service.
+
+The backend signs the JWT and returns a websocket URL.
+
+---
+
+## Development
+
+Clone and run tests.
+
+git clone https://github.com/JalilK/SwiftUIEulerLiveKit.git
+cd SwiftUIEulerLiveKit
 swift test
-```
 
-## Example app
+---
 
-The example app now includes a real Xcode project at `Examples/EulerLiveExampleApp/EulerLiveExampleApp.xcodeproj`. Open that project in Xcode to run the payload inspection harness against the deployed Cloudflare Worker token route.
+## Repository Structure
 
-## Concrete event models
+Sources/EulerLiveKit  
+Tests/EulerLiveKitTests  
+Examples/EulerLiveExampleApp
 
-SwiftUIEulerLiveKit now models the following live payload families as concrete native types.
+---
 
-### Stable models
+## Purpose
 
-- `room_info`
-- `member`
-- `gift`
-- `like`
-- `chat`
-- `follow`
-- `share`
-- `room_user`
-- `live_intro`
-- `room_message`
-- `caption_message`
-- `barrage`
-- `link_mic_fan_ticket_method`
-- `link_mic_armies`
-- `goal_update`
-- `link_mic_method`
-- `in_room_banner`
-- `link_layer`
-
-## Schema discovery workflow
-
-The example app now has first-pass modeling for goal updates, link mic method summaries, in-room banner ranking payloads, and link-layer participant graph updates.
-
-Unknown logging can stay focused on payloads that still have no reliable public model.
-
-## Automatic unknown payload sink and schema dedupe
-
-The example app now persists unknown and partial-decode payloads to an automatic capture sink.
-
-Captured payloads are written outside the repo in the app support directory under a deterministic event-family folder structure.
-
-Each event family also gets a `manifest.json` file that stores
-
-- schema fingerprint
-- schema field paths
-- first seen time
-- last seen time
-- seen count
-- representative payload file
-- observed primary message types
-
-Deduping is schema-based rather than value-based, so repeated payloads with the same field shape collapse into a single manifest entry while the seen count increases.
-
-This keeps schema discovery focused on genuinely new shapes instead of drowning in duplicate live traffic.
+This package exists to make building TikTok LIVE driven SwiftUI applications straightforward while keeping security boundaries clean and debugging visibility high.
