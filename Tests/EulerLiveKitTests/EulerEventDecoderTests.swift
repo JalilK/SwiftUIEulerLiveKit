@@ -154,6 +154,101 @@ struct EulerEventDecoderTests {
     }
 
 
+
+    @Test
+    func decodesObservedRoomInfoEnvelope() {
+        let payload = #"{"event":"room_info","roomId":"7617000000000000000","uniqueId":"thatgirldollar","nickname":"That Girl Dollar","profilePictureUrl":"https://example.com/avatar.jpg","title":"Late night live","isLive":true,"currentViewers":321,"totalViewers":4567}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "room_info")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .roomInfo(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected room info event")
+            return
+        }
+
+        #expect(event.roomId == "7617000000000000000")
+        #expect(event.uniqueId == "thatgirldollar")
+        #expect(event.nickname == "That Girl Dollar")
+        #expect(event.profilePictureURL == "https://example.com/avatar.jpg")
+        #expect(event.title == "Late night live")
+        #expect(event.isLive == true)
+        #expect(event.currentViewers == 321)
+        #expect(event.totalViewers == 4567)
+    }
+
+    @Test
+    func decodesObservedWorkerInfoEnvelope() {
+        let payload = #"{"event":"worker_info","schemaVersion":"2026-03-15","webSocketId":"socket-123","isLoggedIn":true,"bundleEvents":true,"rawMessages":false}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "worker_info")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .workerInfo(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected worker info event")
+            return
+        }
+
+        #expect(event.schemaVersion == "2026-03-15")
+        #expect(event.webSocketId == "socket-123")
+        #expect(event.isLoggedIn == true)
+        #expect(event.bundleEvents == true)
+        #expect(event.rawMessages == false)
+    }
+
+    @Test
+    func decodesObservedTransportConnectEnvelope() {
+        let payload = #"{"type":"tiktok.connect","agentId":"agent-123"}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "tiktok.connect")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .transportConnect(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected transport connect event")
+            return
+        }
+
+        #expect(event.agentId == "agent-123")
+    }
+
+    @Test
+    func decodesObservedFollowSocialEnvelope() {
+        let payload = #"{"messages":[{"type":"WebcastSocialMessage","data":{"action":"1","shareType":"0","shareCount":0,"common":{"method":"WebcastSocialMessage","roomId":"7617210650510592789","displayText":{"defaultPattern":"{0:user} followed the host"}},"user":{"userId":"7364988828970812462","uniqueId":"followfan","nickname":"Follow Fan"}}}],"timestamp":1773524789464}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "follow")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .follow(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected follow event")
+            return
+        }
+
+        #expect(event.uniqueId == "followfan")
+        #expect(event.nickname == "Follow Fan")
+    }
+
+    @Test
+    func decodesObservedShareSocialEnvelope() {
+        let payload = #"{"messages":[{"type":"WebcastSocialMessage","data":{"action":"3","shareType":"1","shareCount":2,"common":{"method":"WebcastSocialMessage","roomId":"7617210650510592789","displayText":{"defaultPattern":"{0:user} shared the live"}},"user":{"userId":"7364988828970812462","uniqueId":"sharefan","nickname":"Share Fan"}}}],"timestamp":1773524789464}"#
+        let record = EulerEventDecoder.decodeRecord(from: payload)
+
+        #expect(record.eventName == "share")
+        #expect(record.decodeOutcome == .decoded)
+
+        guard case .share(let event)? = record.decodedTypedEvent else {
+            Issue.record("Expected share event")
+            return
+        }
+
+        #expect(event.uniqueId == "sharefan")
+        #expect(event.nickname == "Share Fan")
+        #expect(event.shareCount == 2)
+    }
+
     @Test
     func decodesObservedSocialRepostEnvelope() {
         let payload = #"{"messages":[{"type":"WebcastSocialMessage","data":{"action":"4","shareType":"0","shareCount":0,"common":{"method":"WebcastSocialMessage","roomId":"7617210650510592789","displayText":{"defaultPattern":"{0:user} reposted"}},"user":{"userId":"7364988828970812462","uniqueId":"confidente11","nickname":"confidente🖤"}}}],"timestamp":1773524789464}"#
