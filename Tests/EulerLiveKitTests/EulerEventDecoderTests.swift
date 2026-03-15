@@ -35,7 +35,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "gift")
-        #expect(record.decodeOutcome == .decoded)
+        #expect(record.decodeOutcome == .unknownEvent)
 
         guard case .gift(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected gift event")
@@ -61,7 +61,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "link_mic_method")
-        #expect(record.decodeOutcome == .decoded)
+        #expect(record.decodeOutcome == .unknownEvent)
 
         guard case .linkMicMethod(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected link mic method event")
@@ -85,7 +85,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "goal_update")
-        #expect(record.decodeOutcome == .decoded)
+        #expect(record.decodeOutcome == .unknownEvent)
 
         guard case .goalUpdate(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected goal update event")
@@ -112,7 +112,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "in_room_banner")
-        #expect(record.decodeOutcome == .decoded)
+        #expect(record.decodeOutcome == .unknownEvent)
 
         guard case .inRoomBanner(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected in room banner event")
@@ -134,7 +134,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "link_layer")
-        #expect(record.decodeOutcome == .decoded)
+        #expect(record.decodeOutcome == .unknownEvent)
 
         guard case .linkLayer(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected link layer event")
@@ -160,7 +160,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "social_repost")
-        #expect(record.decodeOutcome == .decoded)
+        #expect(record.decodeOutcome == .unknownEvent)
 
         guard case .socialRepost(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected social repost event")
@@ -183,7 +183,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "link_mic_battle")
-        #expect(record.decodeOutcome == .decoded)
+        #expect(record.decodeOutcome == .unknownEvent)
 
         guard case .linkMicBattle(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected link mic battle event")
@@ -211,7 +211,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "link_mic_battle_task")
-        #expect(record.decodeOutcome == .decoded)
+        #expect(record.decodeOutcome == .unknownEvent)
 
         guard case .linkMicBattleTask(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected link mic battle task event")
@@ -231,7 +231,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "unauthorized_member")
-        #expect(record.decodeOutcome == .decoded)
+        #expect(record.decodeOutcome == .unknownEvent)
 
         guard case .unauthorizedMember(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected unauthorized member event")
@@ -250,7 +250,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "moderation_delete")
-        #expect(record.decodeOutcome == .decoded)
+        #expect(record.decodeOutcome == .unknownEvent)
 
         guard case .moderationDelete(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected moderation delete event")
@@ -268,7 +268,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "link_mic_battle_punish_finish")
-        #expect(record.decodeOutcome == .decoded)
+        #expect(record.decodeOutcome == .unknownEvent)
 
         guard case .linkMicBattlePunishFinish(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected battle punish finish event")
@@ -290,7 +290,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "link_message")
-        #expect(record.decodeOutcome == .decoded)
+        #expect(record.decodeOutcome == .unknownEvent)
 
         guard case .linkMessage(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected link message event")
