@@ -480,6 +480,20 @@ public enum EulerEventDecoder {
                     participants: extractLinkLayerParticipants(from: payload)
                 )
             )
+        case "social_repost":
+            return .socialRepost(extractSocialRepostEvent(from: payload))
+        case "link_mic_battle":
+            return .linkMicBattle(extractLinkMicBattleEvent(from: payload))
+        case "link_mic_battle_task":
+            return .linkMicBattleTask(extractLinkMicBattleTaskEvent(from: payload))
+        case "unauthorized_member":
+            return .unauthorizedMember(extractUnauthorizedMemberEvent(from: payload))
+        case "moderation_delete":
+            return .moderationDelete(extractModerationDeleteEvent(from: payload))
+        case "link_mic_battle_punish_finish":
+            return .linkMicBattlePunishFinish(extractLinkMicBattlePunishFinishEvent(from: payload))
+        case "link_message":
+            return .linkMessage(extractLinkMessageEvent(from: payload))
         case "worker_info":
             return .workerInfo(
                 WorkerInfoEvent(
@@ -565,6 +579,65 @@ public enum EulerEventDecoder {
         }
     }
 
+
+    private static func extractSocialRepostEvent(from payload: [String: Any]) -> SocialRepostEvent {
+        SocialRepostEvent(
+            roomId: findString(in: payload, matchingAnyOf: ["roomId"]),
+            userId: findString(in: payload, matchingAnyOf: ["userId"]),
+            uniqueId: findString(in: payload, matchingAnyOf: ["uniqueId"]),
+            nickname: findString(in: payload, matchingAnyOf: ["nickname", "nickName"]),
+            action: findInt(in: payload, matchingAnyOf: ["action"]),
+            shareType: findInt(in: payload, matchingAnyOf: ["shareType"]),
+            shareCount: findInt(in: payload, matchingAnyOf: ["shareCount"]),
+            displayText: findString(in: payload, matchingAnyOf: ["defaultPattern"])
+        )
+    }
+
+    private static func extractUnauthorizedMemberEvent(from payload: [String: Any]) -> UnauthorizedMemberEvent {
+        UnauthorizedMemberEvent(
+            roomId: findString(in: payload, matchingAnyOf: ["roomId"]),
+            nickname: findString(in: payload, matchingAnyOf: ["nickName", "nickname"]),
+            action: findInt(in: payload, matchingAnyOf: ["action"]),
+            enterText: findString(in: payload, matchingAnyOf: ["defaultPattern"])
+        )
+    }
+
+    private static func extractModerationDeleteEvent(from payload: [String: Any]) -> ModerationDeleteEvent {
+        ModerationDeleteEvent(
+            roomId: findString(in: payload, matchingAnyOf: ["roomId"]),
+            deletedUserIds: extractStringArray(in: payload, matchingAnyOf: ["deleteUserIdsList"]),
+            deletedMessageIds: extractStringArray(in: payload, matchingAnyOf: ["deleteMsgIdsList"])
+        )
+    }
+
+    private static func extractLinkMicBattlePunishFinishEvent(from payload: [String: Any]) -> LinkMicBattlePunishFinishEvent {
+        let battleSettings = findDictionary(in: payload, matchingAnyOf: ["battleSettings"]) ?? [:]
+
+        return LinkMicBattlePunishFinishEvent(
+            roomId: findString(in: payload, matchingAnyOf: ["roomId"]),
+            battleId: findString(in: payload, matchingAnyOf: ["battleId"]),
+            channelId: findString(in: payload, matchingAnyOf: ["channelId"]),
+            operatorUserId: findString(in: payload, matchingAnyOf: ["opUid"]),
+            reason: findInt(in: payload, matchingAnyOf: ["reason"]),
+            status: int(fromAny: battleSettings["status"]),
+            endTimeMs: string(fromAny: battleSettings["endTimeMs"])
+        )
+    }
+
+    private static func extractLinkMessageEvent(from payload: [String: Any]) -> LinkMessageEvent {
+        let extraValue = findString(in: payload, matchingAnyOf: ["extra"])
+        let transferExtraValue = findString(in: payload, matchingAnyOf: ["transferExtra"])
+
+        return LinkMessageEvent(
+            roomId: findString(in: payload, matchingAnyOf: ["roomId"]),
+            scene: findInt(in: payload, matchingAnyOf: ["Scene", "scene"]),
+            linkerId: findString(in: payload, matchingAnyOf: ["LinkerId", "linkerId"]),
+            messageType: findInt(in: payload, matchingAnyOf: ["MessageType", "messageType"]),
+            expireTimestamp: findString(in: payload, matchingAnyOf: ["expireTimestamp"]),
+            extra: (extraValue == "") ? nil : extraValue,
+            transferExtra: (transferExtraValue == "") ? nil : transferExtraValue
+        )
+    }
 
     private static func extractLinkMicBattleEvent(from payload: [String: Any]) -> LinkMicBattleEvent {
         let anchorInfo = findDictionary(in: payload, matchingAnyOf: ["anchorInfo"]) ?? [:]
