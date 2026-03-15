@@ -705,10 +705,35 @@ public enum EulerEventDecoder {
             rewardStartTimestamp: findString(in: payload, matchingAnyOf: ["rewardStartTimestamp"]),
             rewardStartTime: findInt(in: payload, matchingAnyOf: ["rewardStartTime"]),
             rewardMultiple: findInt(in: payload, matchingAnyOf: ["rewardMultiple"]),
-            rewardSettleAmount: findInt(in: payload, matchingAnyOf: ["sum"]),
+            rewardSettleAmount: extractRewardSettleAmount(from: payload),
             rewardStatus: findInt(in: payload, matchingAnyOf: ["status"]),
             progressTarget: findInt(in: payload, matchingAnyOf: ["progressTarget"])
         )
+    }
+
+
+    private static func extractRewardSettleAmount(from payload: [String: Any]) -> Int? {
+        if let direct = findInt(in: payload, matchingAnyOf: ["sum"]) {
+            return direct
+        }
+
+        guard
+            let rewardSettle = findDictionary(in: payload, matchingAnyOf: ["rewardSettle"]),
+            let rewardSettlePrompt = findDictionary(in: rewardSettle, matchingAnyOf: ["rewardSettlePrompt"]),
+            let promptElements = findArray(in: rewardSettlePrompt, matchingAnyOf: ["promptElements"])
+        else {
+            return nil
+        }
+
+        for element in promptElements {
+            guard let elementDict = element as? [String: Any] else { continue }
+            let key = findString(in: elementDict, matchingAnyOf: ["promptFieldKey"])
+            if key == "sum", let value = findInt(in: elementDict, matchingAnyOf: ["promptFieldValue"]) {
+                return value
+            }
+        }
+
+        return nil
     }
 
     private static func extractStringArray(in value: Any, matchingAnyOf keys: [String]) -> [String] {

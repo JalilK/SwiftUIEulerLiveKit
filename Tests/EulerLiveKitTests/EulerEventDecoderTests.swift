@@ -35,7 +35,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "gift")
-        #expect(record.decodeOutcome == .unknownEvent)
+        #expect(record.decodeOutcome == .decoded)
 
         guard case .gift(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected gift event")
@@ -61,7 +61,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "link_mic_method")
-        #expect(record.decodeOutcome == .unknownEvent)
+        #expect(record.decodeOutcome == .decoded)
 
         guard case .linkMicMethod(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected link mic method event")
@@ -85,7 +85,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "goal_update")
-        #expect(record.decodeOutcome == .unknownEvent)
+        #expect(record.decodeOutcome == .decoded)
 
         guard case .goalUpdate(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected goal update event")
@@ -112,7 +112,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "in_room_banner")
-        #expect(record.decodeOutcome == .unknownEvent)
+        #expect(record.decodeOutcome == .decoded)
 
         guard case .inRoomBanner(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected in room banner event")
@@ -134,7 +134,7 @@ struct EulerEventDecoderTests {
         let record = EulerEventDecoder.decodeRecord(from: payload)
 
         #expect(record.eventName == "link_layer")
-        #expect(record.decodeOutcome == .unknownEvent)
+        #expect(record.decodeOutcome == .decoded)
 
         guard case .linkLayer(let event)? = record.decodedTypedEvent else {
             Issue.record("Expected link layer event")
