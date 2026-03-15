@@ -19,6 +19,13 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
     case linkMicMethod(LinkMicMethodEvent)
     case inRoomBanner(InRoomBannerEvent)
     case linkLayer(LinkLayerEvent)
+    case socialRepost(SocialRepostEvent)
+    case linkMicBattle(LinkMicBattleEvent)
+    case linkMicBattleTask(LinkMicBattleTaskEvent)
+    case unauthorizedMember(UnauthorizedMemberEvent)
+    case moderationDelete(ModerationDeleteEvent)
+    case linkMicBattlePunishFinish(LinkMicBattlePunishFinishEvent)
+    case linkMessage(LinkMessageEvent)
     case workerInfo(WorkerInfoEvent)
     case transportConnect(TransportConnectEvent)
     case unknown(eventName: String)
@@ -43,6 +50,13 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
         case .linkMicMethod: return "link_mic_method"
         case .inRoomBanner: return "in_room_banner"
         case .linkLayer: return "link_layer"
+        case .socialRepost: return "social_repost"
+        case .linkMicBattle: return "link_mic_battle"
+        case .linkMicBattleTask: return "link_mic_battle_task"
+        case .unauthorizedMember: return "unauthorized_member"
+        case .moderationDelete: return "moderation_delete"
+        case .linkMicBattlePunishFinish: return "link_mic_battle_punish_finish"
+        case .linkMessage: return "link_message"
         case .workerInfo: return "worker_info"
         case .transportConnect: return "tiktok.connect"
         case .unknown(let eventName): return eventName
@@ -87,6 +101,20 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
             return "inRoomBanner currents=\(event.currents.count) playerStates=\(event.playerStates.count)"
         case .linkLayer(let event):
             return "linkLayer scene=\(event.scene.map(String.init) ?? "nil") messageType=\(event.messageType.map(String.init) ?? "nil") participants=\(event.participants.count)"
+        case .socialRepost(let event):
+            return "socialRepost user=\(event.uniqueId ?? event.nickname ?? "unknown")"
+        case .linkMicBattle(let event):
+            return "linkMicBattle battleId=\(event.battleId ?? "nil") status=\(event.status.map(String.init) ?? "nil") action=\(event.action.map(String.init) ?? "nil") leftScore=\(event.leftScore.map(String.init) ?? "nil") rightScore=\(event.rightScore.map(String.init) ?? "nil")"
+        case .linkMicBattleTask(let event):
+            return "linkMicBattleTask battleId=\(event.battleId ?? "nil") type=\(event.messageType.map(String.init) ?? "nil") progress=\(event.taskProgress.map(String.init) ?? "nil") result=\(event.taskResult.map(String.init) ?? "nil")"
+        case .unauthorizedMember(let event):
+            return "unauthorizedMember nickname=\(event.nickname ?? "unknown") action=\(event.action.map(String.init) ?? "nil")"
+        case .moderationDelete(let event):
+            return "moderationDelete users=\(event.deletedUserIds.count) messages=\(event.deletedMessageIds.count)"
+        case .linkMicBattlePunishFinish(let event):
+            return "linkMicBattlePunishFinish battleId=\(event.battleId ?? "nil") operator=\(event.operatorUserId ?? "nil") reason=\(event.reason.map(String.init) ?? "nil")"
+        case .linkMessage(let event):
+            return "linkMessage scene=\(event.scene.map(String.init) ?? "nil") messageType=\(event.messageType.map(String.init) ?? "nil") linkerId=\(event.linkerId ?? "nil")"
         case .workerInfo(let event):
             return "workerInfo schema=\(event.schemaVersion ?? "nil") socket=\(event.webSocketId ?? "nil")"
         case .transportConnect(let event):
@@ -134,6 +162,20 @@ public enum EulerLiveEvent: Sendable, Equatable, Hashable {
             return EulerDocumentedEventKind.inRoomBanner.description
         case .linkLayer:
             return EulerDocumentedEventKind.linkLayer.description
+        case .socialRepost:
+            return "A viewer reposted the live."
+        case .linkMicBattle:
+            return "LinkMic battle lifecycle update including anchors, scores, combos, and battle status."
+        case .linkMicBattleTask:
+            return "Battle bonus-task lifecycle update including start, progress, settle, and reward settlement."
+        case .unauthorizedMember:
+            return "Anonymous or unauthorized viewer join event."
+        case .moderationDelete:
+            return "Moderation delete event listing removed users or removed messages."
+        case .linkMicBattlePunishFinish:
+            return "Battle punishment phase completion event."
+        case .linkMessage:
+            return "Low-level link-layer control message."
         case .workerInfo:
             return "Worker-side transport metadata."
         case .transportConnect:
