@@ -48,6 +48,7 @@ public struct MemberEvent: Sendable, Equatable, Hashable {
 public struct GiftEvent: Sendable, Equatable, Hashable {
     public let uniqueId: String?
     public let nickname: String?
+    public let profilePictureURL: String?
     public let giftName: String?
     public let giftId: Int?
     public let repeatCount: Int?
@@ -61,6 +62,7 @@ public struct GiftEvent: Sendable, Equatable, Hashable {
     public init(
         uniqueId: String?,
         nickname: String?,
+        profilePictureURL: String? = nil,
         giftName: String?,
         giftId: Int?,
         repeatCount: Int?,
@@ -73,6 +75,7 @@ public struct GiftEvent: Sendable, Equatable, Hashable {
     ) {
         self.uniqueId = uniqueId
         self.nickname = nickname
+        self.profilePictureURL = profilePictureURL
         self.giftName = giftName
         self.giftId = giftId
         self.repeatCount = repeatCount
@@ -88,13 +91,22 @@ public struct GiftEvent: Sendable, Equatable, Hashable {
 public struct LikeEvent: Sendable, Equatable, Hashable {
     public let uniqueId: String?
     public let nickname: String?
+    public let profilePictureURL: String?
     public let likeCount: Int?
     public let totalLikeCount: Int?
     public let displayText: String?
 
-    public init(uniqueId: String?, nickname: String?, likeCount: Int?, totalLikeCount: Int?, displayText: String? = nil) {
+    public init(
+        uniqueId: String?,
+        nickname: String?,
+        profilePictureURL: String? = nil,
+        likeCount: Int?,
+        totalLikeCount: Int?,
+        displayText: String? = nil
+    ) {
         self.uniqueId = uniqueId
         self.nickname = nickname
+        self.profilePictureURL = profilePictureURL
         self.likeCount = likeCount
         self.totalLikeCount = totalLikeCount
         self.displayText = displayText

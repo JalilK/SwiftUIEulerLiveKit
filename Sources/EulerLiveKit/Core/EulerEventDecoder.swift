@@ -77,10 +77,10 @@ public enum EulerEventDecoder {
             let fields = [event.uniqueId, event.nickname, event.userId].compactMap { $0 }
             return fields.isEmpty ? .decodedWithPartialData : .decoded
         case .gift(let event):
-            let hasStrongData = event.giftName != nil || event.giftId != nil || event.uniqueId != nil || event.nickname != nil
+            let hasStrongData = event.giftName != nil || event.giftId != nil || event.uniqueId != nil || event.nickname != nil || event.profilePictureURL != nil || event.profilePictureURL != nil
             return hasStrongData ? .decoded : .decodedWithPartialData
         case .like(let event):
-            let hasStrongData = event.likeCount != nil || event.totalLikeCount != nil || event.uniqueId != nil || event.nickname != nil
+            let hasStrongData = event.likeCount != nil || event.totalLikeCount != nil || event.uniqueId != nil || event.nickname != nil || event.profilePictureURL != nil || event.profilePictureURL != nil
             return hasStrongData ? .decoded : .decodedWithPartialData
         case .comment(let event):
             let hasStrongData = event.comment != nil || event.uniqueId != nil || event.nickname != nil
@@ -193,6 +193,82 @@ public enum EulerEventDecoder {
         return "webcastsocialmessage"
     }
 
+    private static func findProfilePictureURL(in payload: [String: Any]) -> String? {
+        if let direct = findString(in: payload, matchingAnyOf: ["profilePictureUrl", "profilePictureURL", "avatarUrl", "avatarThumb"]) {
+            return direct
+        }
+
+        if let user = nestedDictionary(in: payload, matchingAnyOf: ["user"]),
+           let direct = findString(in: user, matchingAnyOf: ["profilePictureUrl", "profilePictureURL", "avatarUrl", "avatarThumb"]) {
+            return direct
+        }
+
+        if let avatarThumb = nestedDictionary(in: payload, matchingAnyOf: ["avatarThumb"]),
+           let thumbURL = firstStringURL(in: avatarThumb) {
+            return thumbURL
+        }
+
+        if let user = nestedDictionary(in: payload, matchingAnyOf: ["user"]),
+           let avatarThumb = nestedDictionary(in: user, matchingAnyOf: ["avatarThumb"]),
+           let thumbURL = firstStringURL(in: avatarThumb) {
+            return thumbURL
+        }
+
+        return nil
+    }
+
+    private static func nestedDictionary(in object: [String: Any], matchingAnyOf keys: [String]) -> [String: Any]? {
+        for key in keys {
+            if let value = object[key] as? [String: Any] {
+                return value
+            }
+        }
+
+        for value in object.values {
+            if let nested = value as? [String: Any],
+               let found = nestedDictionary(in: nested, matchingAnyOf: keys) {
+                return found
+            }
+
+            if let array = value as? [Any] {
+                for item in array {
+                    if let nested = item as? [String: Any],
+                       let found = nestedDictionary(in: nested, matchingAnyOf: keys) {
+                        return found
+                    }
+                }
+            }
+        }
+
+        return nil
+    }
+
+    private static func firstStringURL(in object: [String: Any]) -> String? {
+        if let url = object["url"] as? String, url.isEmpty == false {
+            return url
+        }
+
+        if let urls = object["urlList"] as? [String], let first = urls.first, first.isEmpty == false {
+            return first
+        }
+
+        if let urls = object["url_list"] as? [String], let first = urls.first, first.isEmpty == false {
+            return first
+        }
+
+        for value in object.values {
+            if let nested = value as? [String: Any], let found = firstStringURL(in: nested) {
+                return found
+            }
+
+            if let urls = value as? [String], let first = urls.first, first.isEmpty == false {
+                return first
+            }
+        }
+
+        return nil
+    }
+
     private static func canonicalEventName(_ value: String) -> String {
         let normalized = value
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -289,6 +365,7 @@ public enum EulerEventDecoder {
                 GiftEvent(
                     uniqueId: findString(in: payload, matchingAnyOf: ["uniqueId", "unique_id"]),
                     nickname: findString(in: payload, matchingAnyOf: ["nickname", "nickName", "displayName"]),
+                    profilePictureURL: findProfilePictureURL(in: payload),
                     giftName: findString(in: payload, matchingAnyOf: ["giftName", "name", "gift_name"]),
                     giftId: findInt(in: payload, matchingAnyOf: ["giftId", "gift_id", "id"]),
                     repeatCount: findInt(in: payload, matchingAnyOf: ["repeatCount", "repeat_count", "comboCount", "count"]),
@@ -305,6 +382,7 @@ public enum EulerEventDecoder {
                 LikeEvent(
                     uniqueId: findString(in: payload, matchingAnyOf: ["uniqueId", "unique_id"]),
                     nickname: findString(in: payload, matchingAnyOf: ["nickname", "nickName", "displayName"]),
+                    profilePictureURL: findProfilePictureURL(in: payload),
                     likeCount: findInt(in: payload, matchingAnyOf: ["likeCount", "count"]),
                     totalLikeCount: findInt(in: payload, matchingAnyOf: ["totalLikeCount", "totalLikes"]),
                     displayText: findString(in: payload, matchingAnyOf: ["defaultPattern"])

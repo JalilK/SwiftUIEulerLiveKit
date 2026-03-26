@@ -44,6 +44,7 @@ struct EulerEventDecoderTests {
 
         #expect(event.uniqueId == "ebengomez7")
         #expect(event.nickname == "Ebenezer Cerda Gomez")
+        #expect(event.profilePictureURL == nil)
         #expect(event.giftName == "Rose")
         #expect(event.giftId == 5655)
         #expect(event.repeatCount == 1)
@@ -53,6 +54,32 @@ struct EulerEventDecoderTests {
         #expect(event.groupId == "1773511422618")
         #expect(event.comboCount == 1)
         #expect(event.diamondCount == 1)
+    }
+
+
+    @Test
+    func decodesGiftAndLikeProfilePictureURLs() {
+        let giftPayload = #"{"messages":[{"type":"WebcastGiftMessage","data":{"repeatCount":1,"giftId":5655,"user":{"userId":"1","uniqueId":"giftfan","nickname":"Gift Fan","avatarThumb":"https://example.com/gift-avatar.jpg"},"giftDetails":{"id":"5655","giftName":"Rose","giftType":1}}}],"timestamp":1773511423909}"#
+        let giftRecord = EulerEventDecoder.decodeRecord(from: giftPayload)
+
+        guard case .gift(let giftEvent)? = giftRecord.decodedTypedEvent else {
+            Issue.record("Expected gift event with profile picture")
+            return
+        }
+
+        #expect(giftEvent.profilePictureURL == "https://example.com/gift-avatar.jpg")
+
+        let likePayload = #"{"messages":[{"type":"WebcastLikeMessage","data":{"count":10,"totalLikes":99,"user":{"userId":"2","uniqueId":"likefan","nickname":"Like Fan","avatarUrl":"https://example.com/like-avatar.jpg"}}}],"timestamp":1773511423909}"#
+        let likeRecord = EulerEventDecoder.decodeRecord(from: likePayload)
+
+        guard case .like(let likeEvent)? = likeRecord.decodedTypedEvent else {
+            Issue.record("Expected like event with profile picture")
+            return
+        }
+
+        #expect(likeEvent.profilePictureURL == "https://example.com/like-avatar.jpg")
+        #expect(likeEvent.likeCount == 10)
+        #expect(likeEvent.totalLikeCount == 99)
     }
 
     @Test
